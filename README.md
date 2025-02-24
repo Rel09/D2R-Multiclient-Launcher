@@ -10,48 +10,38 @@ This is a GUI-based Diablo II: Resurrected (D2R) multiclient launcher that allow
 
 # Features
 
-User-friendly GUI – No need to deal with command-line parameters.
-
-Automatic process management – Handles multiple D2R instances efficiently.
-
-Integrated handle64.exe support – Ensures proper unlocking of game instances.
-
-Customizable settings – Easily configure client parameters.
+- No need to deal with command-line parameters.
+- Easily configure client parameters.
+- Can Import/Export configurations
 
 # Requirements
 
-Windows 10 ++
-
-Diablo II: Resurrected installed
-
-handle64.exe (included in the release version)
+- Windows 10 (or newer)
+- D2R
+- handle64.exe (included in the release version, easy to find on google)
 
 # Installation
 
-Download the latest release from the GitHub Releases page.
-
-Extract the files to a folder of your choice.
-
-Ensure handle64.exe is in the same directory as the launcher.
+- Download the latest release from the GitHub Releases page.
+- Extract the files to a folder of your choice.
+- Ensure handle64.exe is in the same directory as the launcher.
 
 # Usage
 
-Run the Launcher – Open the GUI executable.
-
-Configure Settings – Adjust client settings as needed.
-
-Manage Instances – Use the interface to monitor or close clients as necessary.
+- Run the Launcher – Open the GUI executable.
+- Configure Settings – Adjust client settings as needed.
+- Manage Instances – Use the interface to monitor or close clients as necessary.
 
 # Troubleshooting
 
-If the launcher fails to start multiple clients, ensure that:
-
+- If the launcher fails to start multiple clients, ensure that:
 handle64.exe is in the correct folder.
 
-The game is not already running in restricted mode.
+- You have administrator privileges.
 
-You have administrator privileges.
+- When logging into a new account, you may need to use the Battle.net launcher to complete the login process; otherwise, it might not work.
 
 # Disclaimer
 
 This tool is provided "as is" without any warranties. Use at your own risk.
+By using third-party tools, you acknowledge that you are doing so at your own risk and in accordance with the EULA.
