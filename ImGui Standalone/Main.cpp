@@ -11,7 +11,9 @@
 std::vector<D2RInstanceStruct>      Data = {};                          // DB
 bool                                isRunning   = true;                 // This shutdown the process, extern in .h, used in __init__
 bool                                ShowConsole = false;                // Debugging
+constexpr int                       ProcessPingTimer = 8000;
 constexpr const char                Appname[] = "D2R Multiclient";
+constexpr const char                Version[] = "1.1";
 
 void Main() {
     static TIMESTAMP CheckD2RInstanceTimer = Timer::InitTimer();
@@ -23,13 +25,14 @@ void Main() {
         Init = true;
     }
 
-    if (ImGui::Begin(Appname, &isRunning, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
+    static std::string nameVer = std::string(Appname) + " [ " + std::string(Version) + " ]";
+    if (ImGui::Begin(nameVer.c_str(), &isRunning, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
 
         // Top bar
         MenuRoutine();
 
-        // Scan Processes every 2.5 seconds
-        if (Timer::Sleep(CheckD2RInstanceTimer, 2500)) {
+        // Scan Running (green *) Processes every X seconds
+        if (Timer::Sleep(CheckD2RInstanceTimer, ProcessPingTimer)) {
 
             // Check if Process are still running
             for (auto& i : Data) {
@@ -48,15 +51,14 @@ void Main() {
                 }
             }
 
-
         }
 
         // ++++++++++++ Table ++++++++++++
-        const std::vector<std::string> headers = { "#", "Profile Name", "Realm", "Mods" }; // "DLL Path"
+        const std::vector<std::string> headers = { "#", "Profile Name", "Realm", "Mods" };
         ImGui::BeginTable("table1", static_cast<int>(headers.size()), ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg );
 
         // Setup headers and columns
-        ImGui::TableSetupColumn(headers[0].c_str(), ImGuiTableColumnFlags_WidthFixed, 10.0f);  // "#"
+        ImGui::TableSetupColumn(headers[0].c_str(), ImGuiTableColumnFlags_WidthFixed, 10.0f);
         for (uint8_t index = 1; index < headers.size(); ++index) {
             ImGui::TableSetupColumn(headers[index].c_str());
         }
@@ -81,10 +83,6 @@ void Main() {
             // Realm
             ImGui::TableNextColumn();
             ImGui::Text("%s", i.Realm.c_str());
-
-            //// DLL Path
-            //ImGui::TableNextColumn();
-            //ImGui::Text("%s", i.DllPath.c_str());
 
             // Mods
             ImGui::TableNextColumn();

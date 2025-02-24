@@ -18,7 +18,7 @@ std::vector<std::string>	RunCommandWithOutput(const std::string& command) {
 
 	HANDLE hReadPipe, hWritePipe;
 	if (!CreatePipe(&hReadPipe, &hWritePipe, &sa, 0)) {
-		MessageBoxA(0, "Error -> Couldn't pipe Handle64?? returning {}", "9R", 0);
+		MessageBoxA(0, "Error -> Couldn't pipe Handle64?? returning {}", "D2RMulti", 0);
 		return {};
 	}
 
@@ -36,7 +36,7 @@ std::vector<std::string>	RunCommandWithOutput(const std::string& command) {
 	strncpy_s(cmdBuffer, command.c_str(), sizeof(cmdBuffer) - 1);
 	cmdBuffer[sizeof(cmdBuffer) - 1] = '\0';
 	if (!CreateProcessA(NULL, cmdBuffer, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
-		MessageBoxA(0, "Error -> Couldn't CreateProcess Handle64... returning {}", "9R", 0);
+		MessageBoxA(0, "Error -> Couldn't CreateProcess Handle64... returning {}", "D2RMulti", 0);
 		CloseHandle(hReadPipe);
 		CloseHandle(hWritePipe);
 		return {};
@@ -72,7 +72,7 @@ DWORD                       RunCommand(const std::string& command) {
 	ZeroMemory(&pi, sizeof(pi));
 
 	if (!CreateProcessA(NULL, const_cast<char*>(command.c_str()), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-		MessageBoxA(0, "Error: CreateProcess failed ...", "9R", 0);
+		MessageBoxA(0, "Error: CreateProcess failed ...", "D2RMulti", 0);
 		return 0;
 	}
 
@@ -130,7 +130,7 @@ void						EjectDLL(const int& pid, const std::string& path) {
 }
 void						InjectDLL(const int& pid, const std::string& path) {
 	if (!std::filesystem::exists(path)) {
-		MessageBoxA(0, "Error: Couldn't find DLL...", "9R", 0);
+		MessageBoxA(0, "Error: Couldn't find DLL...", "D2RMulti", 0);
 		return;
 	}
 
@@ -138,19 +138,19 @@ void						InjectDLL(const int& pid, const std::string& path) {
 	long dll_size = static_cast<long>((wpath.length() + 1) * sizeof(wchar_t));
 	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 	if (hProc == NULL) {
-		MessageBoxA(0, "Error: Failed to open target process...", "9R", 0);
+		MessageBoxA(0, "Error: Failed to open target process...", "D2RMulti", 0);
 		return;
 	}
 
 	LPVOID lpAlloc = VirtualAllocEx(hProc, NULL, dll_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	if (lpAlloc == NULL) {
-		MessageBoxA(0, "Error: VirtualAllocEx failed...", "9R", 0);
+		MessageBoxA(0, "Error: VirtualAllocEx failed...", "D2RMulti", 0);
 		CloseHandle(hProc);
 		return;
 	}
 
 	if (WriteProcessMemory(hProc, lpAlloc, wpath.c_str(), dll_size, 0) == 0) {
-		MessageBoxA(0, "Error: WriteProcessMemory failed...", "9R", 0);
+		MessageBoxA(0, "Error: WriteProcessMemory failed...", "D2RMulti", 0);
 		CloseHandle(hProc);
 		return;
 	}
@@ -159,7 +159,7 @@ void						InjectDLL(const int& pid, const std::string& path) {
 	LPVOID lpStartAddress = GetProcAddress(hKernel32, "LoadLibraryW");
 	HANDLE hThread = CreateRemoteThread(hProc, NULL, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(lpStartAddress), lpAlloc, 0, NULL);
 	if (hThread == NULL) {
-		MessageBoxA(0, "Error: CreateRemoteThread failed...", "9R", 0);
+		MessageBoxA(0, "Error: CreateRemoteThread failed...", "D2RMulti", 0);
 		CloseHandle(hProc);
 		return;
 	}
@@ -176,19 +176,21 @@ void						RemoveAllHandles() {
 
 	std::string path = GetExeDirectory();
 	if (!fileExists(path + "handle64.exe")) {
-		MessageBoxA(0, "Handle64.exe needs to be right next of this executable to run.", "9R", 0);
+		MessageBoxA(0, "Handle64.exe needs to be right next of this executable to run.", "D2RMulti", 0);
 		return;
 	}
 
-	std::vector<std::string> commandOutput = RunCommandWithOutput(path + "handle64.exe -accepteula -a -p D2R.exe");
+	std::vector<std::string> commandOutput = RunCommandWithOutput(path + "handle64.exe -accepteula -a -p D2R");
 	std::string proc_id_populated = "";
 	std::string handle_id_populated = "";
 	for (const std::string& line : commandOutput) {
 
-		auto PID = line.find("D2R.exe pid:");
-		if (PID != std::string::npos) {
-			size_t start = PID + 13;
-			proc_id_populated = line.substr(start, line.find(" ", start) - start);
+		auto _D2R = line.find("D2R");
+		auto _PID = line.find(" pid:");
+		if (_D2R != std::string::npos && _PID != std::string::npos) {
+			size_t start = _PID + 6;
+			std::string ProcessID = line.substr(start, line.find(" ", start) - start);
+			proc_id_populated = ProcessID;
 		}
 
 		auto HANDLEID = line.find(": Event");

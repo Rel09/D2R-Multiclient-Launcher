@@ -32,8 +32,7 @@ static void DisplayTopBar() {
                 }
 
                 if (count == 0) {
-                    MessageBoxA(0, "Nothing Selected, can't edit...", "9R", 0);
-
+                    MessageBoxA(0, "No selection made. Editing is not possible.", "D2RMulti", 0);
                 }
                 else {
                     EditWindows = true;
@@ -48,7 +47,7 @@ static void DisplayTopBar() {
                     if (i.isSelected) {
 
                         std::string NAME = "Do you want to delete [ " + i.Name + " ] ?";
-                        if (MessageBoxA(0, NAME.c_str(), "9R", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+                        if (MessageBoxA(0, NAME.c_str(), "D2RMulti", MB_YESNO | MB_ICONQUESTION) == IDYES) {
                             it = Data.erase(it);
                             DeletedSomething = true;
                         }
@@ -72,7 +71,7 @@ static void DisplayTopBar() {
                     if (i.isSelected) {
 
                         std::string NAME = "Do you want to copy [ " + i.Name + " ] ?";
-                        if (MessageBoxA(0, NAME.c_str(), "9R", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+                        if (MessageBoxA(0, NAME.c_str(), "D2RMulti", MB_YESNO | MB_ICONQUESTION) == IDYES) {
                             D2RInstanceStruct T = i;
                             auto now = std::chrono::system_clock::now();
                             auto time_since_epoch = now.time_since_epoch();
@@ -92,7 +91,7 @@ static void DisplayTopBar() {
             if (ImGui::MenuItem("Start")) {
 
                 if (Data.size() == 0) {
-                    MessageBoxA(0, "Nothing Selected, can't start...", "9R", 0);
+                    MessageBoxA(0, "No selection made. Starting is not possible.", "D2RMulti", 0);
                 }
 
                 else {
@@ -112,7 +111,7 @@ static void DisplayTopBar() {
 
                             // Inject if a Path is given
                             if (i.ProcessID != 0 && !i.DllPath.empty()) {
-                                Sleep(500);
+                                Sleep(1500);
                                 InjectDLL(i.ProcessID, i.DllPath);
                             }
              
@@ -161,10 +160,10 @@ static void DisplayTopBar() {
                 std::string filePath = GetExeDirectory() + "config.csv";
 
                 if (!fileExists(filePath)) {
-                    MessageBoxA(0, "Rename your file to 'config.csv' and copy it next to this executable", "9R", 0);
+                    MessageBoxA(0, "Rename your file to 'config.csv' and copy it next to this executable", "D2RMulti", 0);
                 }
                 else {
-                    int response = MessageBoxA(0, "Are you sure you want to import the configuration?", "9R", MB_OKCANCEL | MB_ICONQUESTION);
+                    int response = MessageBoxA(0, "Are you sure you want to import the configuration?", "D2RMulti", MB_OKCANCEL | MB_ICONQUESTION);
                     if (response == IDOK) {
                         GetSettings->ImportConfigFromCSV();
                     }
@@ -274,7 +273,7 @@ static void DisplayExternalMenu() {
             // Same name filter
             for (const auto& i : Data) {
                 if (i.Name == TempStruct.Name) {
-                    MessageBoxA(0, "A profile with this name already exists.\nPlease choose a different name.", "9R", 0);
+                    MessageBoxA(0, "A profile with this name already exists.\nPlease choose a different name.", "D2RMulti", 0);
                     canAdd = false;
                 }
             }
