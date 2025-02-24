@@ -1,7 +1,7 @@
 ## D2R Multiclient Launcher
 
 <p align="center">
-  <img src="https://i.imgur.com/i5SYHiV.png" alt="image">
+  <img src="https://i.imgur.com/CZJVZos.gif" alt="image">
 </p>
 
 # Overview
