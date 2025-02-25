@@ -32,71 +32,26 @@ jobs:
         nuget restore ${{ env.SOLUTION_FILE_PATH }}
         msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=x64 ${{ env.SOLUTION_FILE_PATH }}
 
-    - name: Verify Output Directory
-      run: |
-        dir "x64\${{ env.BUILD_CONFIGURATION }}"
-
     - name: Download handle64.exe
+      shell: pwsh
       run: |
         Invoke-WebRequest -Uri "https://download.sysinternals.com/files/Handle.zip" -OutFile "Handle.zip"
         Expand-Archive -Path "Handle.zip" -DestinationPath "handle_temp"
         mkdir "x64\${{ env.BUILD_CONFIGURATION }}" -Force
         Move-Item -Path "handle_temp\handle64.exe" -Destination "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Force
 
-    - name: Package and Verify
-      shell: pwsh  # Use PowerShell Core for better compatibility
+    - name: Package and Release
+      shell: pwsh
       run: |
         mkdir "dist\D2RLauncher" -Force
         Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\D2RLauncher.exe" -Destination "dist\D2RLauncher\" -Force
         Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Destination "dist\D2RLauncher\" -Force
         $version = "${{ github.sha }}".Substring(0,7)
         $zipName = "D2RLauncher-$version.zip"
-        # Debug: Current working directory and files
-        pwd
-        dir
-        # Create the zip
         Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
-        # Debug: Check if zip exists and its location
-        if (-not (Test-Path $zipName)) {
-          Write-Error "Zip file $zipName was not created! Checking for possible location..."
-          # Look for zip files in the current directory
-          dir *.zip
-          exit 1
-        }
-        echo "Zip file created at: $zipName"
-        # Verify contents
-        Expand-Archive -Path $zipName -DestinationPath "verify_temp"
-        dir "verify_temp\D2RLauncher"
-        if (-not (Test-Path "verify_temp\D2RLauncher\D2RLauncher.exe") -or -not (Test-Path "verify_temp\D2RLauncher\handle64.exe")) {
-          Write-Error "$zipName is missing expected files!"
-          exit 1
-        }
-        # Set RELEASE_FILE with a simple relative path
         Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_FILE=$zipName"
-        # Also set with an absolute path for redundancy
         $absoluteZipPath = Join-Path (Get-Location) $zipName
         Add-Content -Path $env:GITHUB_ENV -Value "ABSOLUTE_RELEASE_FILE=$absoluteZipPath"
-        # Debug: Print the environment variables
-        echo "RELEASE_FILE is set to: $env:RELEASE_FILE"
-        echo "ABSOLUTE_RELEASE_FILE is set to: $env:ABSOLUTE_RELEASE_FILE"
-
-    - name: Debug Release File
-      shell: pwsh  # Use PowerShell Core for consistency
-      run: |
-        echo "Attempting to release: ${{ env.RELEASE_FILE }}"
-        if (-not (Test-Path "${{ env.RELEASE_FILE }}")) {
-          Write-Error "Release file ${{ env.RELEASE_FILE }} does not exist! Trying absolute path..."
-          # Try the absolute path if relative fails
-          if ($env:ABSOLUTE_RELEASE_FILE -and (Test-Path "$env:ABSOLUTE_RELEASE_FILE")) {
-            echo "Found file at absolute path: $env:ABSOLUTE_RELEASE_FILE"
-            Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_FILE=$env:ABSOLUTE_RELEASE_FILE"
-          } else {
-            # Look for any zip files as a last resort
-            dir *.zip
-            exit 1
-          }
-        }
-        echo "File exists, proceeding to release."
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
