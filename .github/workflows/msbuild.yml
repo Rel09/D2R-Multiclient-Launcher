@@ -30,14 +30,18 @@ jobs:
       - name: Retrieve and Increment Version
         shell: pwsh
         run: |
-          $versionFile = "source\ImGui Standalone\Version.h"
-          
+          $versionFile = "Source\\ImGui Standalone\\Version.h"
+
+          Write-Output "Current Directory: $(Get-Location)"
+          Write-Output "Listing Files:"
+          Get-ChildItem -Path . -Recurse
+
           if (Test-Path $versionFile) {
               $content = Get-Content -Path $versionFile -Raw
               if ($content -match '#define VERSION\s+"(\d+)\.(\d+)"') {
                   $major = $matches[1]
                   $minor = [int]$matches[2] + 1
-                  $newVersion = "#pragma once`n#define VERSION `"$major.$minor`""
+                  $newVersion = "#pragma once`n#define VERSION \"$major.$minor\""
                   Set-Content -Path $versionFile -Value $newVersion
                   Write-Output "Updated Version: $major.$minor"
                   Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$major.$minor"
@@ -46,7 +50,7 @@ jobs:
                   exit 1
               }
           } else {
-              Write-Output "Version.h not found!"
+              Write-Output "File not found: $versionFile"
               exit 1
           }
 
