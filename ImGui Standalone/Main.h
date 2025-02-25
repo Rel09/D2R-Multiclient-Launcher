@@ -12,7 +12,6 @@ struct D2RInstanceStruct {
     std::string ModList;
     std::string Realm;
 
-    // ____ Needed ____
     int         ProcessID = -1;
     bool        isSelected = false;
     bool        isBeingEdited = false;

@@ -115,7 +115,9 @@ static void DisplayTopBar() {
             if (ImGui::MenuItem("Stop")) {
 
                 for (auto& i : Data) {
-                    if (i.ProcessID != -1) {
+
+
+                    if (i.isSelected && i.ProcessID != -1) {
                         auto closeProcessByID = [](DWORD pid) -> bool {
                             HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
                             if (hProcess == nullptr) {
@@ -138,6 +140,8 @@ static void DisplayTopBar() {
                         closeProcessByID(i.ProcessID);
                         i.ProcessID = -1;
                     }
+
+
                 }
 
             }
