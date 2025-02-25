@@ -59,8 +59,16 @@ jobs:
         }
         echo "Zip file created: $zipName"
         echo "RELEASE_FILE=$zipName" >> $GITHUB_ENV
-        # Debug: Confirm environment variable
         echo "RELEASE_FILE is set to: $env:RELEASE_FILE"
+
+    - name: Debug Release File
+      run: |
+        echo "Attempting to release: ${{ env.RELEASE_FILE }}"
+        if (-not (Test-Path "${{ env.RELEASE_FILE }}")) {
+          Write-Error "Release file ${{ env.RELEASE_FILE }} does not exist!"
+          exit 1
+        }
+        echo "File exists, proceeding to release."
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
@@ -72,10 +80,3 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       continue-on-error: false
-      run: |
-        # Debug: Check file existence and variable
-        echo "Attempting to release: ${{ env.RELEASE_FILE }}"
-        if (-not (Test-Path "${{ env.RELEASE_FILE }}")) {
-          Write-Error "Release file ${{ env.RELEASE_FILE }} does not exist!"
-          exit 1
-        }
