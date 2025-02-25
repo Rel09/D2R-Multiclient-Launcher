@@ -47,7 +47,6 @@ jobs:
         $version = "${{ github.sha }}".Substring(0,7)
         $zipName = "D2RLauncher-$version.zip"
         Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
-        # Debug: Check if zip exists and list contents
         if (-not (Test-Path $zipName)) {
           Write-Error "Zip file $zipName was not created!"
           exit 1
@@ -60,6 +59,8 @@ jobs:
         }
         echo "Zip file created: $zipName"
         echo "RELEASE_FILE=$zipName" >> $GITHUB_ENV
+        # Debug: Confirm environment variable
+        echo "RELEASE_FILE is set to: $env:RELEASE_FILE"
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
@@ -67,7 +68,14 @@ jobs:
         files: ${{ env.RELEASE_FILE }}
         tag_name: "v${{ github.sha }}"
         name: "Version ${{ github.sha }}"
-        generate_release_notes: false
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       continue-on-error: false
+      run: |
+        # Debug: Check file existence and variable
+        echo "Attempting to release: ${{ env.RELEASE_FILE }}"
+        if (-not (Test-Path "${{ env.RELEASE_FILE }}")) {
+          Write-Error "Release file ${{ env.RELEASE_FILE }} does not exist!"
+          exit 1
+        }
