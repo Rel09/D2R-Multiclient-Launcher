@@ -30,8 +30,7 @@ jobs:
       - name: Retrieve and Update Version
         shell: pwsh
         run: |
-          $repoRoot = $env:GITHUB_WORKSPACE  # Use GitHub-provided workspace path
-          $versionFile = Join-Path $repoRoot "source\ImGui Standalone\Version.h"
+          $versionFile = "source\ImGui Standalone\Version.h"
           $versionDir = Split-Path $versionFile -Parent
           
           # Ensure the directory exists
