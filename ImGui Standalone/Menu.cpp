@@ -4,6 +4,7 @@
 #include "Main.h"
 #include "Tools.h"
 #include "Registry.h"
+#include "Version.h"
 #include "Injection.h"
 
 #include <Windows.h>
@@ -101,7 +102,7 @@ static void DisplayTopBar() {
 
                             // Inject if a Path is given
                             if (i.ProcessID != 0 && !i.DllPath.empty()) {
-                                Sleep(1500);
+                                Sleep(700);
                                 InjectDLL(i.ProcessID, i.DllPath);
                             }
              
@@ -189,7 +190,7 @@ static void DisplayTopBar() {
         // Help Menu
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("About")) {
-                MessageBoxA(0, "Created by Religious09 - 192.168.0.8 @ Discord\nYou are respecting EULA, usage of 3rd party tools is at your own risk", "About", 0);
+                MessageBoxA(0, "Created by Rel09\nGithub.com/Rel09/D2R-Multiclient-Launcher/\n192.168.0.8 @ Discord\n\n\nYou are respecting EULA, usage of 3rd party tools is at your own risk", "About", 0);
             }
             ImGui::EndMenu();
         }

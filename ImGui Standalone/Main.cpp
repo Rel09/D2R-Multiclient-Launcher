@@ -5,18 +5,15 @@
 #include "Tools.h"
 #include "Timer.h"
 #include "Registry.h"
+#include "Version.h"
 
 #include <windows.h>
 
-std::vector<D2RInstanceStruct>      Data = {};                          // DB
-bool                                isRunning   = true;                 // This shutdown the process, extern in .h, used in __init__
-bool                                ShowConsole = false;                // Debugging
+std::vector<D2RInstanceStruct>      Data = {};
+bool                                isRunning   = true;
+bool                                ShowConsole = false;
 constexpr int                       ProcessPingTimer = 8000;
 constexpr const char                Appname[] = "D2R Multiclient";
-constexpr const char                Version[] = "1.3";
-
-
-
 
 void Main() {
     static TIMESTAMP CheckD2RInstanceTimer = Timer::InitTimer();
@@ -28,7 +25,7 @@ void Main() {
         Init = true;
     }
 
-    static std::string nameVer = std::string(Appname) + " [ " + std::string(Version) + " ]";
+    static std::string nameVer = std::string(Appname) + " [ v" + VERSION + " ]";
     if (ImGui::Begin(nameVer.c_str(), &isRunning, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
 
         // Top bar
