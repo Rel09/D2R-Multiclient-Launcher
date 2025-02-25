@@ -11,7 +11,6 @@
 #include <chrono>
 
 static bool AddWindows = false;
-static bool EditWindows = false;
 
 static void DisplayTopBar() {
     if (ImGui::BeginMenuBar()) {
@@ -22,20 +21,10 @@ static void DisplayTopBar() {
                 AddWindows = true;
             }
             if (ImGui::MenuItem("Edit")) {
-
-                int count = 0;
                 for (auto& i : Data) {
                     if (i.isSelected) {
                         i.isBeingEdited = true;
-                        count++;
                     }
-                }
-
-                if (count == 0) {
-                    MessageBoxA(0, "No selection made. Editing is not possible.", "D2RMulti", 0);
-                }
-                else {
-                    EditWindows = true;
                 }
             }
             if (ImGui::MenuItem("Delete")) {
@@ -268,18 +257,8 @@ static void DisplayExternalMenu() {
         // Save Button
         if (ImGui::Button("Save", { 70, 30 })) {
             bool canAdd = true;
+
             // Can do a bunch of filtering here...
-
-            // Same name filter
-            for (const auto& i : Data) {
-                if (i.Name == TempStruct.Name) {
-                    MessageBoxA(0, "A profile with this name already exists.\nPlease choose a different name.", "D2RMulti", 0);
-                    canAdd = false;
-                }
-            }
-
-
-
 
             // Add if filters are good
             if (canAdd) {
@@ -298,54 +277,51 @@ static void DisplayExternalMenu() {
             AddWindows = false;
         }
 
-    
         ImGui::End();                                                                                       // End
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //                                                         EDIT WINDOWS
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    if (EditWindows) {
+    for (auto& i : Data) {
+        if (i.isBeingEdited) {
+            std::string windowName = "Edit###" + std::to_string(&i - &Data[0]);
+            ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
 
-        for (auto& i : Data) {
-            if (i.isBeingEdited) {
-                std::string windowName = "Edit###" + std::to_string(&i - &Data[0]);
-                ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+            // User Inputs
+            InputTextWithResize("Profile Name", i.Name, MAX_PATH);
+            ImGui::Separator();
 
-                // User Inputs
-                InputTextWithResize("Profile Name", i.Name, MAX_PATH);
-                ImGui::Separator();
+            InputTextWithResize("B.net Email", i.Email, MAX_PATH);
+            ImGui::Separator();
 
-                InputTextWithResize("B.net Email", i.Email, MAX_PATH);
-                ImGui::Separator();
+            InputTextWithResize("Password", i.Password, MAX_PATH, ImGuiInputTextFlags_Password);
+            ImGui::Separator();
 
-                InputTextWithResize("Password", i.Password, MAX_PATH, ImGuiInputTextFlags_Password);
-                ImGui::Separator();
+            InputTextWithResize("Dll Path   [Optional]", i.DllPath, MAX_PATH);
+            ImGui::Separator();
 
-                InputTextWithResize("Dll Path   [Optional]", i.DllPath, MAX_PATH);
-                ImGui::Separator();
+            InputTextWithResize("Mods       [Optional]", i.ModList, MAX_PATH);
+            ImGui::Separator();
 
-                InputTextWithResize("Mods       [Optional]", i.ModList, MAX_PATH);
-                ImGui::Separator();
+            InputTextWithResize("Realm      [us, eu, asia]", i.Realm, 5);
+            ImGui::Separator();
 
-                InputTextWithResize("Realm      [us, eu, asia]", i.Realm, 5);
-                ImGui::Separator();
+            InputTextWithResize("D2R Path", i.D2REXEPath, MAX_PATH);
+            ImGui::Text("Make sure your D2R executable starts with D2R");
+            ImGui::Text("Ex: 'D2R_001.exe', 'D2R.exe'");
 
-                InputTextWithResize("D2R Path", i.D2REXEPath, MAX_PATH);
-                ImGui::Text("Make sure your D2R executable starts with D2R");
-                ImGui::Text("Ex: 'D2R_001.exe', 'D2R.exe'");
+            ImGui::Separator();
 
-                ImGui::Separator();
-
-                if (ImGui::Button("Ok", {40, 20})) {
-                    GetSettings->UpdateConfig();
-                    i.isBeingEdited = false;
-                }
-
-                ImGui::End();
+            if (ImGui::Button("Close", {50, 20})) {
+                GetSettings->UpdateConfig();
+                i.isBeingEdited = false;
             }
+
+            ImGui::End();
         }
     }
+    
 }
 
 void MenuRoutine() {

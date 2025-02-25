@@ -13,7 +13,10 @@ bool                                isRunning   = true;                 // This 
 bool                                ShowConsole = false;                // Debugging
 constexpr int                       ProcessPingTimer = 8000;
 constexpr const char                Appname[] = "D2R Multiclient";
-constexpr const char                Version[] = "1.1";
+constexpr const char                Version[] = "1.2";                  // not pushed yet
+
+
+
 
 void Main() {
     static TIMESTAMP CheckD2RInstanceTimer = Timer::InitTimer();

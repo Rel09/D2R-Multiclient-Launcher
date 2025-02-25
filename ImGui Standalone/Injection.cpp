@@ -180,7 +180,10 @@ void						RemoveAllHandles() {
 		return;
 	}
 
+	std::string CMD = "\"" + path + "handle64.exe\" - accepteula - a - p D2R";
+	std::cout << "Handle Command: [" << CMD << "]" << std::endl;
 	std::vector<std::string> commandOutput = RunCommandWithOutput(path + "handle64.exe -accepteula -a -p D2R");
+
 	std::string proc_id_populated = "";
 	std::string handle_id_populated = "";
 	for (const std::string& line : commandOutput) {
@@ -202,7 +205,9 @@ void						RemoveAllHandles() {
 		}
 
 		if (!handle_id_populated.empty()) {		
-			std::string closeCommand = path + "handle64.exe -p " + proc_id_populated + " -c " + handle_id_populated + " -y";
+
+			std::string closeCommand = "\"" + path + "handle64.exe\" -p " + proc_id_populated + " -c " + handle_id_populated + " -y";
+			std::cout << "Close D2R Instance Command: [" << closeCommand << "]" << std::endl;
 			system(closeCommand.c_str());
 			handle_id_populated = "";	// im paranoid
 		}
