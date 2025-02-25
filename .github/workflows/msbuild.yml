@@ -70,19 +70,28 @@ jobs:
           Write-Error "$zipName is missing expected files!"
           exit 1
         }
-        # Set RELEASE_FILE with absolute path for safety
+        # Set RELEASE_FILE with a simple relative path (since we're in the right directory)
+        echo "RELEASE_FILE=$zipName" >> $GITHUB_ENV
+        # Also try setting it with an absolute path for redundancy
         $absoluteZipPath = Join-Path (Get-Location) $zipName
-        echo "RELEASE_FILE=$absoluteZipPath" >> $GITHUB_ENV
+        echo "ABSOLUTE_RELEASE_FILE=$absoluteZipPath" >> $GITHUB_ENV
         echo "RELEASE_FILE is set to: $env:RELEASE_FILE"
+        echo "ABSOLUTE_RELEASE_FILE is set to: $env:ABSOLUTE_RELEASE_FILE"
 
     - name: Debug Release File
       run: |
         echo "Attempting to release: ${{ env.RELEASE_FILE }}"
         if (-not (Test-Path "${{ env.RELEASE_FILE }}")) {
-          Write-Error "Release file ${{ env.RELEASE_FILE }} does not exist!"
-          # Try to find any zip files as a last resort
-          dir *.zip
-          exit 1
+          Write-Error "Release file ${{ env.RELEASE_FILE }} does not exist! Trying absolute path..."
+          # Try the absolute path if relative fails
+          if ($env:ABSOLUTE_RELEASE_FILE -and (Test-Path "$env:ABSOLUTE_RELEASE_FILE")) {
+            echo "Found file at absolute path: $env:ABSOLUTE_RELEASE_FILE"
+            echo "RELEASE_FILE=$env:ABSOLUTE_RELEASE_FILE" >> $GITHUB_ENV
+          } else {
+            # Look for any zip files as a last resort
+            dir *.zip
+            exit 1
+          }
         }
         echo "File exists, proceeding to release."
 
@@ -92,7 +101,7 @@ jobs:
         files: ${{ env.RELEASE_FILE }}
         tag_name: "v${{ github.sha }}"
         name: "Version ${{ github.sha }}"
-        generate_release_notes: true
+        generate_release_notes: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       continue-on-error: false
