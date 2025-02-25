@@ -7,7 +7,6 @@ on:
 env:
   SOLUTION_FILE_PATH: .
   BUILD_CONFIGURATION: Release
-  DXSDK_DIR: C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)
 
 permissions:
   contents: write
@@ -23,10 +22,13 @@ jobs:
     - name: Install DirectX SDK
       run: choco install directx-sdk --ignore-checksums -y
 
-    - name: Set DirectX SDK paths
+    - name: Discover DirectX SDK Installation Path
+      id: discover_dx_sdk
       run: |
-        echo "LIB=${{ env.DXSDK_DIR }}\Lib\x64" >> $GITHUB_ENV
-        echo "INCLUDE=${{ env.DXSDK_DIR }}\Include" >> $GITHUB_ENV
+        $dxSdkPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\DirectX' -Name 'InstallationFolder').InstallationFolder
+        echo "DXSDK_DIR=$dxSdkPath" >> $GITHUB_ENV
+        echo "LIB=$dxSdkPath\Lib\x64" >> $GITHUB_ENV
+        echo "INCLUDE=$dxSdkPath\Include" >> $GITHUB_ENV
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.0.2
@@ -60,4 +62,3 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
