@@ -32,10 +32,6 @@ jobs:
         run: |
           $versionFile = "ImGui Standalone\Version.h"
           
-          Write-Output "Current Directory: $(Get-Location)"
-          Write-Output "Listing Files:"
-          Get-ChildItem -Path . -Recurse
-
           if (Test-Path $versionFile) {
               $content = Get-Content -Path $versionFile -Raw
               if ($content -match '#define VERSION\s+"(\d+)\.(\d+)"') {
@@ -43,7 +39,6 @@ jobs:
                   $minor = [int]$matches[2] + 1
                   $newVersion = "#pragma once`r`n#define VERSION `"$major.$minor`""
                   Set-Content -Path $versionFile -Value $newVersion -NoNewline
-                  Write-Output "Updated Version: $major.$minor"
                   git config user.name "github-actions"
                   git config user.email "github-actions@github.com"
                   git add $versionFile
@@ -51,11 +46,9 @@ jobs:
                   git push
                   echo "VERSION=$major.$minor" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
               } else {
-                  Write-Output "Version format not found in Version.h"
                   exit 1
               }
           } else {
-              Write-Output "File not found: $versionFile"
               exit 1
           }
 
