@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v2
       with:
         vs-version: '17.12'
 
@@ -41,15 +41,12 @@ jobs:
 
     - name: Package and Verify
       run: |
-        # Create folder structure
         mkdir "dist\D2RLauncher" -Force
         Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\D2RLauncher.exe" -Destination "dist\D2RLauncher\" -Force
         Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Destination "dist\D2RLauncher\" -Force
-        # Set version using short commit SHA
         $version = "${{ github.sha }}".Substring(0,7)
         $zipName = "D2RLauncher-$version.zip"
         Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
-        # Verify contents
         Expand-Archive -Path $zipName -DestinationPath "verify_temp"
         if (-not (Test-Path "verify_temp\D2RLauncher\D2RLauncher.exe") -or -not (Test-Path "verify_temp\D2RLauncher\handle64.exe")) {
           Write-Error "$zipName is missing expected files!"
@@ -62,6 +59,7 @@ jobs:
       with:
         files: ${{ env.RELEASE_FILE }}
         tag_name: "v${{ github.sha }}"
-        release_name: "Version ${{ github.sha }}"
+        name: "Version ${{ github.sha }}"
+        generate_release_notes: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
