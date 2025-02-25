@@ -19,38 +19,35 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Install DirectX SDK
-      run: choco install directx-sdk --ignore-checksums -y
+    - name: Setup MSBuild and Windows SDK
+      uses: microsoft/setup-msbuild@v1.0.2
+      with:
+        vs-version: '17.12'
 
-    - name: Discover DirectX SDK Installation Path
-      id: discover_dx_sdk
+    - name: Set Windows SDK Environment Variables
       shell: powershell
       run: |
-        $dxSdkPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\DirectX' -Name 'InstallationFolder' -ErrorAction SilentlyContinue).InstallationFolder
-        if (-not $dxSdkPath) {
-          # Fallback to Chocolatey's default install location if registry key is missing
-          $dxSdkPath = "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)"
-        }
-        if (-not (Test-Path $dxSdkPath)) {
-          Write-Error "DirectX SDK not found at $dxSdkPath. Installation may have failed."
+        # Use the Windows SDK included with the runner (e.g., version 10.0.26100.0 from your log)
+        $sdkPath = "C:\Program Files (x86)\Windows Kits\10"
+        $sdkLibPath = "$sdkPath\Lib\10.0.26100.0\um\x64"  # x64 for your Release|x64 config
+        $sdkIncludePath = "$sdkPath\Include\10.0.26100.0"
+        echo "LIB=$sdkLibPath" >> $GITHUB_ENV
+        echo "INCLUDE=$sdkIncludePath\um;$sdkIncludePath\shared;$sdkIncludePath\ucrt" >> $GITHUB_ENV
+        echo "Windows SDK Lib Path: $sdkLibPath"
+        if (-not (Test-Path "$sdkLibPath\d3d11.lib")) {
+          Write-Error "d3d11.lib not found at $sdkLibPath"
           exit 1
         }
-        echo "DXSDK_DIR=$dxSdkPath" >> $GITHUB_ENV
-        echo "LIB=$dxSdkPath\Lib\x86" >> $GITHUB_ENV  # Use x86 unless your app is explicitly 64-bit
-        echo "INCLUDE=$dxSdkPath\Include" >> $GITHUB_ENV
-        echo "Found DirectX SDK at: $dxSdkPath"
-
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.0.2
 
     - name: Restore NuGet Packages
       run: nuget restore ${{ env.SOLUTION_FILE_PATH }}
 
     - name: Build Solution
-      run: |
-        # Explicitly pass environment variables to MSBuild
-        msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:DXSDK_DIR="${{ env.DXSDK_DIR }}" /p:Lib="${{ env.LIB }}" /p:Include="${{ env.INCLUDE }}" ${{ env.SOLUTION_FILE_PATH }}
       shell: cmd
+      run: |
+        echo LIB=%LIB%
+        echo INCLUDE=%INCLUDE%
+        msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=x64 /p:Lib="%LIB%" /p:Include="%INCLUDE%" ${{ env.SOLUTION_FILE_PATH }}
 
     - name: Download handle64.exe
       run: |
