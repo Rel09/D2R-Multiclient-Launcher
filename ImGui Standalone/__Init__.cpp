@@ -171,6 +171,7 @@ void                                UI::Render() {
     //ImGui::StyleColorsClassic();
     //ImGui::StyleColorsLight();
 
+    // chatgpt chad
     ImGuiStyle& style = ImGui::GetStyle();
     ImVec4* colors = style.Colors;
     style.FrameRounding = 5.0f;
@@ -283,7 +284,6 @@ void                                UI::Render() {
     if (ShowConsole) { FreeConsole_(); }
 
     // Close
-
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();

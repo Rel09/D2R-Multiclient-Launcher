@@ -13,7 +13,7 @@ bool                                isRunning   = true;                 // This 
 bool                                ShowConsole = false;                // Debugging
 constexpr int                       ProcessPingTimer = 8000;
 constexpr const char                Appname[] = "D2R Multiclient";
-constexpr const char                Version[] = "1.3";                  // not pushed yet
+constexpr const char                Version[] = "1.3";
 
 
 
