@@ -30,7 +30,7 @@ jobs:
       - name: Retrieve and Increment Version
         shell: pwsh
         run: |
-          $versionFile = "Source\ImGui Standalone\Version.h"
+          $versionFile = "ImGui Standalone\Version.h"
           
           Write-Output "Current Directory: $(Get-Location)"
           Write-Output "Listing Files:"
