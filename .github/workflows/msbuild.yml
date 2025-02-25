@@ -27,6 +27,29 @@ jobs:
         echo "LIB=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64" >> $GITHUB_ENV
         echo "INCLUDE=C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt" >> $GITHUB_ENV
 
+    - name: Increment Version
+      run: |
+        $versionFile = "version.h"
+        if (Test-Path $versionFile) {
+          $content = Get-Content $versionFile
+          # Extract current version (e.g., "1.3")
+          if ($content -match '#define VERSION "(\\d+)\\.(\\d+)"') {
+            $majorVersion = $matches[1]
+            $minorVersion = [int]$matches[2]
+            $minorVersion++
+            $newVersion = "$majorVersion.$minorVersion"
+          }
+        } else {
+          # Default to 1.0 if version.h doesn't exist
+          $newVersion = "1.0"
+        }
+        
+        # Update version in version.h
+        $newContent = "#define VERSION \"$newVersion\""
+        Set-Content -Path $versionFile -Value $newContent
+        echo "Updated version to: $newVersion"
+        echo "VERSION=$newVersion" >> $GITHUB_ENV
+
     - name: Restore and Build
       run: |
         nuget restore ${{ env.SOLUTION_FILE_PATH }}
@@ -46,7 +69,7 @@ jobs:
         mkdir "dist\D2RLauncher" -Force
         Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\D2RLauncher.exe" -Destination "dist\D2RLauncher\" -Force
         Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Destination "dist\D2RLauncher\" -Force
-        $version = "${{ github.sha }}".Substring(0,7)
+        $version = "${{ env.VERSION }}"
         $zipName = "D2RLauncher-$version.zip"
         Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
         Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_FILE=$zipName"
@@ -57,8 +80,8 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: ${{ env.RELEASE_FILE }}
-        tag_name: "v${{ github.sha }}"
-        name: "Version ${{ github.sha }}"
+        tag_name: "v${{ env.VERSION }}"
+        name: "Version ${{ env.VERSION }}"
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
