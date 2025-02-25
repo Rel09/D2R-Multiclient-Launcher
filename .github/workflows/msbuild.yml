@@ -44,6 +44,7 @@ jobs:
         Move-Item -Path "handle_temp\handle64.exe" -Destination "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Force
 
     - name: Package and Verify
+      shell: pwsh  # Use PowerShell Core for better compatibility
       run: |
         mkdir "dist\D2RLauncher" -Force
         Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\D2RLauncher.exe" -Destination "dist\D2RLauncher\" -Force
@@ -70,15 +71,17 @@ jobs:
           Write-Error "$zipName is missing expected files!"
           exit 1
         }
-        # Set RELEASE_FILE with a simple relative path (since we're in the right directory)
-        echo "RELEASE_FILE=$zipName" >> $GITHUB_ENV
-        # Also try setting it with an absolute path for redundancy
+        # Set RELEASE_FILE with a simple relative path
+        Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_FILE=$zipName"
+        # Also set with an absolute path for redundancy
         $absoluteZipPath = Join-Path (Get-Location) $zipName
-        echo "ABSOLUTE_RELEASE_FILE=$absoluteZipPath" >> $GITHUB_ENV
+        Add-Content -Path $env:GITHUB_ENV -Value "ABSOLUTE_RELEASE_FILE=$absoluteZipPath"
+        # Debug: Print the environment variables
         echo "RELEASE_FILE is set to: $env:RELEASE_FILE"
         echo "ABSOLUTE_RELEASE_FILE is set to: $env:ABSOLUTE_RELEASE_FILE"
 
     - name: Debug Release File
+      shell: pwsh  # Use PowerShell Core for consistency
       run: |
         echo "Attempting to release: ${{ env.RELEASE_FILE }}"
         if (-not (Test-Path "${{ env.RELEASE_FILE }}")) {
@@ -86,7 +89,7 @@ jobs:
           # Try the absolute path if relative fails
           if ($env:ABSOLUTE_RELEASE_FILE -and (Test-Path "$env:ABSOLUTE_RELEASE_FILE")) {
             echo "Found file at absolute path: $env:ABSOLUTE_RELEASE_FILE"
-            echo "RELEASE_FILE=$env:ABSOLUTE_RELEASE_FILE" >> $GITHUB_ENV
+            Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_FILE=$env:ABSOLUTE_RELEASE_FILE"
           } else {
             # Look for any zip files as a last resort
             dir *.zip
@@ -101,7 +104,7 @@ jobs:
         files: ${{ env.RELEASE_FILE }}
         tag_name: "v${{ github.sha }}"
         name: "Version ${{ github.sha }}"
-        generate_release_notes: false
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       continue-on-error: false
