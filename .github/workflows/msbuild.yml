@@ -24,15 +24,21 @@ jobs:
 
     - name: Discover DirectX SDK Installation Path
       id: discover_dx_sdk
+      shell: powershell
       run: |
         $dxSdkPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\DirectX' -Name 'InstallationFolder' -ErrorAction SilentlyContinue).InstallationFolder
         if (-not $dxSdkPath) {
-          # If registry value is not found, fall back to default path
+          # Fallback to Chocolatey's default install location if registry key is missing
           $dxSdkPath = "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)"
         }
+        if (-not (Test-Path $dxSdkPath)) {
+          Write-Error "DirectX SDK not found at $dxSdkPath. Installation may have failed."
+          exit 1
+        }
         echo "DXSDK_DIR=$dxSdkPath" >> $GITHUB_ENV
-        echo "LIB=$dxSdkPath\Lib\x64" >> $GITHUB_ENV
+        echo "LIB=$dxSdkPath\Lib\x86" >> $GITHUB_ENV  # Use x86 unless your app is explicitly 64-bit
         echo "INCLUDE=$dxSdkPath\Include" >> $GITHUB_ENV
+        echo "Found DirectX SDK at: $dxSdkPath"
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.0.2
@@ -41,7 +47,10 @@ jobs:
       run: nuget restore ${{ env.SOLUTION_FILE_PATH }}
 
     - name: Build Solution
-      run: msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} ${{ env.SOLUTION_FILE_PATH }}
+      run: |
+        # Explicitly pass environment variables to MSBuild
+        msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:DXSDK_DIR="${{ env.DXSDK_DIR }}" /p:Lib="${{ env.LIB }}" /p:Include="${{ env.INCLUDE }}" ${{ env.SOLUTION_FILE_PATH }}
+      shell: cmd
 
     - name: Download handle64.exe
       run: |
