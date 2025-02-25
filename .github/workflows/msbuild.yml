@@ -7,6 +7,7 @@ on:
 env:
   SOLUTION_FILE_PATH: .
   BUILD_CONFIGURATION: Release
+  DXSDK_DIR: C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)
 
 permissions:
   contents: write
@@ -24,9 +25,8 @@ jobs:
 
     - name: Set DirectX SDK paths
       run: |
-        echo "DXSDK_DIR=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)" >> $GITHUB_ENV
-        echo "LIB=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x64" >> $GITHUB_ENV
-        echo "INCLUDE=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" >> $GITHUB_ENV
+        echo "LIB=${{ env.DXSDK_DIR }}\Lib\x64" >> $GITHUB_ENV
+        echo "INCLUDE=${{ env.DXSDK_DIR }}\Include" >> $GITHUB_ENV
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.0.2
@@ -60,3 +60,4 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
