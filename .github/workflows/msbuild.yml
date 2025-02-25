@@ -27,73 +27,27 @@ jobs:
           echo "LIB=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64" >> $GITHUB_ENV
           echo "INCLUDE=C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt" >> $GITHUB_ENV
 
-      - name: Retrieve and Update Version
+      - name: Retrieve and Increment Version
         shell: pwsh
         run: |
           $versionFile = "source\ImGui Standalone\Version.h"
-          $versionDir = Split-Path $versionFile -Parent
-          
-          # Ensure the directory exists
-          if (-not (Test-Path $versionDir)) {
-            New-Item -Path $versionDir -ItemType Directory -Force | Out-Null
-            Write-Host "Created directory: $versionDir"
-          }
           
           if (Test-Path $versionFile) {
-            Write-Host "File exists at: $versionFile"
-            $content = Get-Content $versionFile
-            
-            # Find the line containing VERSION
-            $versionLine = $content | Where-Object { $_ -match '#define VERSION\s*"' }
-            
-            if ($versionLine) {
-              Write-Host "Original file contents: $versionLine"
-              
-              # Extract version between quotes
-              $startIndex = $versionLine.IndexOf('"') + 1
-              $endIndex = $versionLine.IndexOf('"', $startIndex)
-              
-              if ($startIndex -gt 0 -and $endIndex -gt $startIndex) {
-                $version = $versionLine.Substring($startIndex, $endIndex - $startIndex)
-                Write-Host "Extracted version: $version"
-                
-                # Split version into major and minor parts (assuming format like "X.Y")
-                $versionParts = $version.Split('.')
-                if ($versionParts.Length -eq 2 -and $versionParts[1] -match '^\d+$') {
-                  $major = $versionParts[0]
-                  $minor = [int]$versionParts[1] + 1  # Increment minor version
-                  $newVersion = "$major.$minor"
-                } else {
-                  # If version format is invalid, default to incrementing as a single number
-                  $newVersion = ([int]$version + 1).ToString()
-                }
-                
-                Write-Host "New version: $newVersion"
-                
-                # Update the file with the new version
-                $newVersionLine = "#define VERSION ""$newVersion"""
-                $updatedContent = $content -replace [regex]::Escape($versionLine), $newVersionLine
-                Set-Content -Path $versionFile -Value $updatedContent
-                
-                Write-Host "Version updated in file to: $newVersion"
-                echo "VERSION=$newVersion" >> $env:GITHUB_ENV
+              $content = Get-Content -Path $versionFile -Raw
+              if ($content -match '#define VERSION\s+"(\d+)\.(\d+)"') {
+                  $major = $matches[1]
+                  $minor = [int]$matches[2] + 1
+                  $newVersion = "#pragma once`n#define VERSION `"$major.$minor`""
+                  Set-Content -Path $versionFile -Value $newVersion
+                  Write-Output "Updated Version: $major.$minor"
+                  Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$major.$minor"
               } else {
-                Write-Host "No valid version found in the line."
-                $newVersion = "0.1"
-                echo "VERSION=$newVersion" >> $env:GITHUB_ENV
+                  Write-Output "Version format not found in Version.h"
+                  exit 1
               }
-            } else {
-              Write-Host "No VERSION definition found in file."
-              $newVersion = "0.1"
-              echo "VERSION=$newVersion" >> $env:GITHUB_ENV
-            }
           } else {
-            Write-Host "File does not exist at: $versionFile"
-            $newVersion = "0.1"
-            # Create the file with initial version
-            Set-Content -Path $versionFile -Value "#pragma once`n#define VERSION ""$newVersion"""
-            Write-Host "Created file with version: $newVersion"
-            echo "VERSION=$newVersion" >> $env:GITHUB_ENV
+              Write-Output "Version.h not found!"
+              exit 1
           }
 
       - name: Restore and Build
