@@ -29,16 +29,19 @@ jobs:
 
     - name: Retrieve Version
       run: |
-        $versionFile = "version.h"
+        $versionFile = "source\\ImGui Standalone\\Version.h"
         if (Test-Path $versionFile) {
+          Write-Host "File exists at: $versionFile"
           $content = Get-Content $versionFile
           if ($content -match '#define VERSION "(\\d+)\\.(\\d+)"') {
             $newVersion = "$($matches[1]).$($matches[2])"
+            echo "VERSION=$newVersion" >> $GITHUB_ENV
           }
         } else {
+          Write-Host "File does not exist at: $versionFile"
           $newVersion = "0.1"
+          echo "VERSION=$newVersion" >> $GITHUB_ENV
         }
-        echo "VERSION=$newVersion" >> $GITHUB_ENV
 
     - name: Restore and Build
       run: |
@@ -60,7 +63,7 @@ jobs:
         Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\D2RLauncher.exe" -Destination "dist\D2RLauncher\" -Force
         Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Destination "dist\D2RLauncher\" -Force
         $version = "${{ env.VERSION }}"
-        $zipName = "D2RLauncher v$version.zip"
+        $zipName = "D2RLauncher-$version.zip"
         Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
         Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_FILE=$zipName"
         $absoluteZipPath = Join-Path (Get-Location) $zipName
@@ -71,7 +74,7 @@ jobs:
       with:
         files: ${{ env.RELEASE_FILE }}
         tag_name: "v${{ env.VERSION }}"
-        name: "D2RLauncher v${{ env.VERSION }}"
+        name: "Version ${{ env.VERSION }}"
         generate_release_notes: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
