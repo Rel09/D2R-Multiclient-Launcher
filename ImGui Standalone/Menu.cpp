@@ -85,12 +85,13 @@ static void DisplayTopBar() {
 
                 else {
                     for (auto& i : Data) {
-                        if (i.isSelected) {
+                        if (i.isSelected && i.ProcessID == -1) {
      
-                            std::string TempStr = i.D2REXEPath + " -username " + i.Email + " -password " + i.Password + " -address " + i.Realm + ".actual.battle.net";
+                            std::string TempStr = i.D2REXEPath + " -username \"" + i.Email + "\" -password \"" + i.Password + "\" -address \"" + i.Realm + ".actual.battle.net\"";
                             if (!i.ModList.empty()) {
-                                TempStr += " -mod " + i.ModList;
+                                TempStr += " -mod \"" + i.ModList + "\"";
                             }
+                            std::cout << "D2R Launch Command: [ " << TempStr  << " ]" << std::endl;
 
                             // Scan all Running executable thats starts with D2R to remove handle
                             RemoveAllHandles();

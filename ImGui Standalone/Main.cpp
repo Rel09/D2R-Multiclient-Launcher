@@ -10,10 +10,10 @@
 
 std::vector<D2RInstanceStruct>      Data = {};                          // DB
 bool                                isRunning   = true;                 // This shutdown the process, extern in .h, used in __init__
-bool                                ShowConsole = false;                // Debugging
+bool                                ShowConsole = true;                // Debugging
 constexpr int                       ProcessPingTimer = 8000;
 constexpr const char                Appname[] = "D2R Multiclient";
-constexpr const char                Version[] = "1.2";                  // not pushed yet
+constexpr const char                Version[] = "1.3";                  // not pushed yet
 
 
 
