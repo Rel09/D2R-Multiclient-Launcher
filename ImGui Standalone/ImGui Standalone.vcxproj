@@ -83,83 +83,76 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetName>D2RLauncher</TargetName>
   </PropertyGroup>
-  
-  
-<!-- Debug|Win32 -->
-<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-  <ClCompile>
-    <WarningLevel>Level3</WarningLevel>
-    <SDLCheck>true</SDLCheck>
-    <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    <ConformanceMode>true</ConformanceMode>
-  </ClCompile>
-  <Link>
-    <SubSystem>Windows</SubSystem>
-    <GenerateDebugInformation>true</GenerateDebugInformation>
-    <AdditionalDependencies>d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-  </Link>
-</ItemDefinitionGroup>
-
-<!-- Release|Win32 -->
-<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-  <ClCompile>
-    <WarningLevel>Level3</WarningLevel>
-    <FunctionLevelLinking>true</FunctionLevelLinking>
-    <IntrinsicFunctions>true</IntrinsicFunctions>
-    <SDLCheck>true</SDLCheck>
-    <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    <ConformanceMode>true</ConformanceMode>
-  </ClCompile>
-  <Link>
-    <SubSystem>Windows</SubSystem>
-    <EnableCOMDATFolding>true</EnableCOMDATFolding>
-    <OptimizeReferences>true</OptimizeReferences>
-    <GenerateDebugInformation>true</GenerateDebugInformation>
-    <AdditionalDependencies>d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-  </Link>
-</ItemDefinitionGroup>
-
-<!-- Debug|x64 -->
-<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-  <ClCompile>
-    <WarningLevel>Level3</WarningLevel>
-    <SDLCheck>true</SDLCheck>
-    <PreprocessorDefinitions>_DEBUG;CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    <ConformanceMode>true</ConformanceMode>
-    <LanguageStandard>stdcpp20</LanguageStandard>
-  </ClCompile>
-  <Link>
-    <SubSystem>Windows</SubSystem>
-    <GenerateDebugInformation>true</GenerateDebugInformation>
-    <AdditionalDependencies>d3d11.lib;Comdlg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-  </Link>
-</ItemDefinitionGroup>
-
-<!-- Release|x64 -->
-<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-  <ClCompile>
-    <WarningLevel>Level3</WarningLevel>
-    <FunctionLevelLinking>true</FunctionLevelLinking>
-    <IntrinsicFunctions>true</IntrinsicFunctions>
-    <SDLCheck>true</SDLCheck>
-    <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    <ConformanceMode>true</ConformanceMode>
-    <LanguageStandard>stdcpp20</LanguageStandard>
-  </ClCompile>
-  <Link>
-    <SubSystem>Windows</SubSystem>
-    <EnableCOMDATFolding>true</EnableCOMDATFolding>
-    <OptimizeReferences>true</OptimizeReferences>
-    <GenerateDebugInformation>true</GenerateDebugInformation>
-    <AdditionalDependencies>d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-  </Link>
-  <ResourceCompile>
-    <ResourceOutputFileName>$(IntDir)%(Filename).res</ResourceOutputFileName>
-    <SuppressStartupBanner>true</SuppressStartupBanner>
-  </ResourceCompile>
-</ItemDefinitionGroup>
-  
-  
+  <!-- Debug|Win32 -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <!-- Release|Win32 -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <!-- Debug|x64 -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3d11.lib;Comdlg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <!-- Release|x64 -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <ResourceOutputFileName>$(IntDir)%(Filename).res</ResourceOutputFileName>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
@@ -193,6 +186,7 @@
     <ClInclude Include="Registry.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Tools.h" />
+    <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ImGui Standalone1.rc" />
