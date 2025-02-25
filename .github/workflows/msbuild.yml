@@ -14,61 +14,44 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Setup MSBuild and Windows SDK
       uses: microsoft/setup-msbuild@v1.0.2
       with:
         vs-version: '17.12'
 
-    - name: Set Windows SDK Environment Variables
-      shell: powershell
+    - name: Set Windows SDK Paths
       run: |
-        # Use the Windows SDK included with the runner (e.g., version 10.0.26100.0 from your log)
-        $sdkPath = "C:\Program Files (x86)\Windows Kits\10"
-        $sdkLibPath = "$sdkPath\Lib\10.0.26100.0\um\x64"  # x64 for your Release|x64 config
-        $sdkIncludePath = "$sdkPath\Include\10.0.26100.0"
-        echo "LIB=$sdkLibPath" >> $GITHUB_ENV
-        echo "INCLUDE=$sdkIncludePath\um;$sdkIncludePath\shared;$sdkIncludePath\ucrt" >> $GITHUB_ENV
-        echo "Windows SDK Lib Path: $sdkLibPath"
-        if (-not (Test-Path "$sdkLibPath\d3d11.lib")) {
-          Write-Error "d3d11.lib not found at $sdkLibPath"
-          exit 1
-        }
+        echo "LIB=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64" >> $GITHUB_ENV
+        echo "INCLUDE=C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt" >> $GITHUB_ENV
 
-    - name: Restore NuGet Packages
-      run: nuget restore ${{ env.SOLUTION_FILE_PATH }}
-
-    - name: Build Solution
-      shell: cmd
+    - name: Restore and Build
       run: |
-        echo LIB=%LIB%
-        echo INCLUDE=%INCLUDE%
-        msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=x64 /p:Lib="%LIB%" /p:Include="%INCLUDE%" ${{ env.SOLUTION_FILE_PATH }}
+        nuget restore ${{ env.SOLUTION_FILE_PATH }}
+        msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=x64 ${{ env.SOLUTION_FILE_PATH }}
 
     - name: Download handle64.exe
       run: |
         Invoke-WebRequest -Uri "https://download.sysinternals.com/files/Handle.zip" -OutFile "Handle.zip"
         Expand-Archive -Path "Handle.zip" -DestinationPath "handle_temp"
-        Move-Item -Path "handle_temp\handle64.exe" -Destination "bin\${{ env.BUILD_CONFIGURATION }}\" -Force
+        mkdir "x64\${{ env.BUILD_CONFIGURATION }}" -Force
+        Move-Item -Path "handle_temp\handle64.exe" -Destination "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Force
 
-    - name: Package Executable and Dependencies
+    - name: Package and Release
       run: |
         mkdir D2RLauncher
-        Copy-Item -Path "bin\${{ env.BUILD_CONFIGURATION }}\D2RLauncher.exe" -Destination "D2RLauncher\" -Force
-        Copy-Item -Path "bin\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Destination "D2RLauncher\" -Force
+        Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\D2RLauncher.exe" -Destination "D2RLauncher\"
+        Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Destination "D2RLauncher\"
         Compress-Archive -Path D2RLauncher\* -DestinationPath D2RLauncher.zip
+        echo "RELEASE_FILE=D2RLauncher.zip" >> $GITHUB_ENV
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: D2RLauncher.zip
+        files: ${{ env.RELEASE_FILE }}
         tag_name: latest
         release_name: Latest Release
-        draft: false
-        prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
