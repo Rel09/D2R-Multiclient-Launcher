@@ -15,23 +15,32 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
-      with:
-        vs-version: '17.12'
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '17.12'
 
-    - name: Set Windows SDK Paths
-      run: |
-        echo "LIB=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64" >> $GITHUB_ENV
-        echo "INCLUDE=C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt" >> $GITHUB_ENV
+      - name: Set Windows SDK Paths
+        run: |
+          echo "LIB=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64" >> $GITHUB_ENV
+          echo "INCLUDE=C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt" >> $GITHUB_ENV
 
-    - name: Retrieve and Update Version
-      run: |
-        $versionFile = "source\\ImGui Standalone\\Version.h"
-        
-        if (Test-Path $versionFile) {
+      - name: Retrieve and Update Version
+        shell: pwsh
+        run: |
+          $repoRoot = Get-Location  # Get the root of the checked-out repository
+          $versionFile = Join-Path $repoRoot "source\ImGui Standalone\Version.h"
+          $versionDir = Split-Path $versionFile -Parent
+          
+          # Ensure the directory exists
+          if (-not (Test-Path $versionDir)) {
+            New-Item -Path $versionDir -ItemType Directory -Force | Out-Null
+            Write-Host "Created directory: $versionDir"
+          }
+          
+          if (Test-Path $versionFile) {
             Write-Host "File exists at: $versionFile"
             $content = Get-Content $versionFile
             
@@ -39,88 +48,88 @@ jobs:
             $versionLine = $content | Where-Object { $_ -match '#define VERSION\s*"' }
             
             if ($versionLine) {
-                Write-Host "Original file contents: $versionLine"
+              Write-Host "Original file contents: $versionLine"
+              
+              # Extract version between quotes
+              $startIndex = $versionLine.IndexOf('"') + 1
+              $endIndex = $versionLine.IndexOf('"', $startIndex)
+              
+              if ($startIndex -gt 0 -and $endIndex -gt $startIndex) {
+                $version = $versionLine.Substring($startIndex, $endIndex - $startIndex)
+                Write-Host "Extracted version: $version"
                 
-                # Extract version between quotes
-                $startIndex = $versionLine.IndexOf('"') + 1
-                $endIndex = $versionLine.IndexOf('"', $startIndex)
-                
-                if ($startIndex -gt 0 -and $endIndex -gt $startIndex) {
-                    $version = $versionLine.Substring($startIndex, $endIndex - $startIndex)
-                    Write-Host "Extracted version: $version"
-                    
-                    # Split version into major and minor parts (assuming format like "X.Y")
-                    $versionParts = $version.Split('.')
-                    if ($versionParts.Length -eq 2 -and $versionParts[1] -match '^\d+$') {
-                        $major = $versionParts[0]
-                        $minor = [int]$versionParts[1] + 1  # Increment minor version
-                        $newVersion = "$major.$minor"
-                    } else {
-                        # If version format is invalid, default to incrementing as a single number
-                        $newVersion = ([int]$version + 1).ToString()
-                    }
-                    
-                    Write-Host "New version: $newVersion"
-                    
-                    # Update the file with the new version
-                    $newVersionLine = "#define VERSION ""$newVersion"""
-                    $updatedContent = $content -replace [regex]::Escape($versionLine), $newVersionLine
-                    Set-Content -Path $versionFile -Value $updatedContent
-                    
-                    Write-Host "Version updated in file to: $newVersion"
-                    echo "VERSION=$newVersion" >> $env:GITHUB_ENV
+                # Split version into major and minor parts (assuming format like "X.Y")
+                $versionParts = $version.Split('.')
+                if ($versionParts.Length -eq 2 -and $versionParts[1] -match '^\d+$') {
+                  $major = $versionParts[0]
+                  $minor = [int]$versionParts[1] + 1  # Increment minor version
+                  $newVersion = "$major.$minor"
                 } else {
-                    Write-Host "No valid version found in the line."
-                    $newVersion = "0.1"
-                    echo "VERSION=$newVersion" >> $env:GITHUB_ENV
+                  # If version format is invalid, default to incrementing as a single number
+                  $newVersion = ([int]$version + 1).ToString()
                 }
-            } else {
-                Write-Host "No VERSION definition found in file."
+                
+                Write-Host "New version: $newVersion"
+                
+                # Update the file with the new version
+                $newVersionLine = "#define VERSION ""$newVersion"""
+                $updatedContent = $content -replace [regex]::Escape($versionLine), $newVersionLine
+                Set-Content -Path $versionFile -Value $updatedContent
+                
+                Write-Host "Version updated in file to: $newVersion"
+                echo "VERSION=$newVersion" >> $env:GITHUB_ENV
+              } else {
+                Write-Host "No valid version found in the line."
                 $newVersion = "0.1"
                 echo "VERSION=$newVersion" >> $env:GITHUB_ENV
+              }
+            } else {
+              Write-Host "No VERSION definition found in file."
+              $newVersion = "0.1"
+              echo "VERSION=$newVersion" >> $env:GITHUB_ENV
             }
-        } else {
+          } else {
             Write-Host "File does not exist at: $versionFile"
             $newVersion = "0.1"
-            # Create the file with initial version if it doesn't exist
+            # Create the file with initial version
             Set-Content -Path $versionFile -Value "#pragma once`n#define VERSION ""$newVersion"""
             Write-Host "Created file with version: $newVersion"
             echo "VERSION=$newVersion" >> $env:GITHUB_ENV
-        }
+          }
 
-    - name: Restore and Build
-      run: |
-        nuget restore ${{ env.SOLUTION_FILE_PATH }}
-        msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=x64 ${{ env.SOLUTION_FILE_PATH }}
+      - name: Restore and Build
+        run: |
+          nuget restore ${{ env.SOLUTION_FILE_PATH }}
+          msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=x64 ${{ env.SOLUTION_FILE_PATH }}
 
-    - name: Download handle64.exe
-      shell: pwsh
-      run: |
-        Invoke-WebRequest -Uri "https://download.sysinternals.com/files/Handle.zip" -OutFile "Handle.zip"
-        Expand-Archive -Path "Handle.zip" -DestinationPath "handle_temp"
-        mkdir "x64\${{ env.BUILD_CONFIGURATION }}" -Force
-        Move-Item -Path "handle_temp\handle64.exe" -Destination "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Force
+      - name: Download handle64.exe
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://download.sysinternals.com/files/Handle.zip" -OutFile "Handle.zip"
+          Expand-Archive -Path "Handle.zip" -DestinationPath "handle_temp"
+          mkdir "x64\${{ env.BUILD_CONFIGURATION }}" -Force
+          Move-Item -Path "handle_temp\handle64.exe" -Destination "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Force
 
-    - name: Package and Release
-      shell: pwsh
-      run: |
-        mkdir "dist\D2RLauncher" -Force
-        Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\D2RLauncher.exe" -Destination "dist\D2RLauncher\" -Force
-        Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Destination "dist\D2RLauncher\" -Force
-        $version = "${{ env.VERSION }}"
-        $zipName = "D2RLauncher-$version.zip"
-        Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
-        Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_FILE=$zipName"
-        $absoluteZipPath = Join-Path (Get-Location) $zipName
-        Add-Content -Path $env:GITHUB_ENV -Value "ABSOLUTE_RELEASE_FILE=$absoluteZipPath"
+      - name: Package and Release
+        shell: pwsh
+        run: |
+          mkdir "dist\D2RLauncher" -Force
+          Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\D2RLauncher.exe" -Destination "dist\D2RLauncher\" -Force
+          Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Destination "dist\D2RLauncher\" -Force
+          $version = "${{ env.VERSION }}"
+          $zipName = "D2RLauncher-$version.zip"
+          Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_FILE=$zipName"
+          $absoluteZipPath = Join-Path (Get-Location) $zipName
+          Add-Content -Path $env:GITHUB_ENV -Value "ABSOLUTE_RELEASE_FILE=$absoluteZipPath"
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: ${{ env.RELEASE_FILE }}
-        tag_name: "v${{ env.VERSION }}"
-        name: "Version ${{ env.VERSION }}"
-        generate_release_notes: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      continue-on-error: false
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.RELEASE_FILE }}
+          tag_name: "v${{ env.VERSION }}"
+          name: "Version ${{ env.VERSION }}"
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: false
