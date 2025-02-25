@@ -25,13 +25,13 @@ std::string	GetExeDirectory() {
 }
 
 void		SetNextWindowsInTheMiddle(const int WinSizeX, const int WinSizeY) {
-	ImVec2 windowSize(WinSizeX, WinSizeY);
+	ImVec2 windowSize(static_cast<float>(WinSizeX), static_cast<float>(WinSizeY));
 	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 	ImVec2 screenSize((float)screenWidth, (float)screenHeight);
 	ImVec2 windowPos = ImVec2((screenSize.x - windowSize.x) * 0.5f, (screenSize.y - windowSize.y) * 0.5f);
 	ImGui::SetNextWindowPos(windowPos);
-	ImGui::SetNextWindowSize(ImVec2(WinSizeX, WinSizeY));
+	ImGui::SetNextWindowSize(ImVec2(static_cast<float>(WinSizeX), static_cast<float>(WinSizeY)));
 }
 
 std::vector<std::string> ReadFile(const std::string& filename) {
