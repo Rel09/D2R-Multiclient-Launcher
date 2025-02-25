@@ -47,11 +47,18 @@ jobs:
         $version = "${{ github.sha }}".Substring(0,7)
         $zipName = "D2RLauncher-$version.zip"
         Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
+        # Debug: Check if zip exists and list contents
+        if (-not (Test-Path $zipName)) {
+          Write-Error "Zip file $zipName was not created!"
+          exit 1
+        }
         Expand-Archive -Path $zipName -DestinationPath "verify_temp"
+        dir "verify_temp\D2RLauncher"
         if (-not (Test-Path "verify_temp\D2RLauncher\D2RLauncher.exe") -or -not (Test-Path "verify_temp\D2RLauncher\handle64.exe")) {
           Write-Error "$zipName is missing expected files!"
           exit 1
         }
+        echo "Zip file created: $zipName"
         echo "RELEASE_FILE=$zipName" >> $GITHUB_ENV
 
     - name: Create GitHub Release
@@ -63,3 +70,4 @@ jobs:
         generate_release_notes: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: false
