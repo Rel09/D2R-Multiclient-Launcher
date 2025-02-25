@@ -76,7 +76,7 @@ jobs:
         files: ${{ env.RELEASE_FILE }}
         tag_name: "v${{ github.sha }}"
         name: "Version ${{ github.sha }}"
-        generate_release_notes: true
+        generate_release_notes: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       continue-on-error: false
