@@ -25,7 +25,11 @@ jobs:
     - name: Discover DirectX SDK Installation Path
       id: discover_dx_sdk
       run: |
-        $dxSdkPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\DirectX' -Name 'InstallationFolder').InstallationFolder
+        $dxSdkPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\DirectX' -Name 'InstallationFolder' -ErrorAction SilentlyContinue).InstallationFolder
+        if (-not $dxSdkPath) {
+          # If registry value is not found, fall back to default path
+          $dxSdkPath = "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)"
+        }
         echo "DXSDK_DIR=$dxSdkPath" >> $GITHUB_ENV
         echo "LIB=$dxSdkPath\Lib\x64" >> $GITHUB_ENV
         echo "INCLUDE=$dxSdkPath\Include" >> $GITHUB_ENV
