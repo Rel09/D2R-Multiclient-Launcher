@@ -19,14 +19,16 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.0.2
+    - name: Install DirectX SDK
+      run: choco install directx-sdk --ignore-checksums -y
 
-    - name: Install DirectX SDK (if needed)
+    - name: Set DirectX SDK paths
       run: |
-        choco install directx-sdk --ignore-checksums -y
         echo "LIB=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x64" >> $GITHUB_ENV
         echo "INCLUDE=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" >> $GITHUB_ENV
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.0.2
 
     - name: Restore NuGet Packages
       run: nuget restore ${{ env.SOLUTION_FILE_PATH }}
