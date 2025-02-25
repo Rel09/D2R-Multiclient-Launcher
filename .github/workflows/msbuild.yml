@@ -30,8 +30,8 @@ jobs:
       - name: Retrieve and Increment Version
         shell: pwsh
         run: |
-          $versionFile = "Source\\ImGui Standalone\\Version.h"
-
+          $versionFile = "Source\ImGui Standalone\Version.h"
+          
           Write-Output "Current Directory: $(Get-Location)"
           Write-Output "Listing Files:"
           Get-ChildItem -Path . -Recurse
@@ -41,10 +41,15 @@ jobs:
               if ($content -match '#define VERSION\s+"(\d+)\.(\d+)"') {
                   $major = $matches[1]
                   $minor = [int]$matches[2] + 1
-                  $newVersion = "#pragma once`n#define VERSION \"$major.$minor\""
-                  Set-Content -Path $versionFile -Value $newVersion
+                  $newVersion = "#pragma once`r`n#define VERSION `"$major.$minor`""
+                  Set-Content -Path $versionFile -Value $newVersion -NoNewline
                   Write-Output "Updated Version: $major.$minor"
-                  Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$major.$minor"
+                  git config user.name "github-actions"
+                  git config user.email "github-actions@github.com"
+                  git add $versionFile
+                  git commit -m "Bump version to $major.$minor"
+                  git push
+                  echo "VERSION=$major.$minor" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
               } else {
                   Write-Output "Version format not found in Version.h"
                   exit 1
@@ -76,9 +81,9 @@ jobs:
           $version = "${{ env.VERSION }}"
           $zipName = "D2RLauncher-$version.zip"
           Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
-          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_FILE=$zipName"
+          echo "RELEASE_FILE=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           $absoluteZipPath = Join-Path (Get-Location) $zipName
-          Add-Content -Path $env:GITHUB_ENV -Value "ABSOLUTE_RELEASE_FILE=$absoluteZipPath"
+          echo "ABSOLUTE_RELEASE_FILE=$absoluteZipPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
