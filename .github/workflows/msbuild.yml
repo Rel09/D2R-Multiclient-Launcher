@@ -16,6 +16,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure we fetch all tags
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -30,32 +32,21 @@ jobs:
       - name: Retrieve and Increment Version
         shell: pwsh
         run: |
-          $versionFile = "ImGui Standalone\Version.h"
-          
-          if (Test-Path $versionFile) {
-              $content = Get-Content -Path $versionFile -Raw
-              if ($content -match '#define VERSION\s+"(\d+)\.(\d+)"') {
-                  $major = $matches[1]
-                  $minor = [int]$matches[2] + 1
-                  $newVersion = "#pragma once`r`n#define VERSION `"$major.$minor`""
-                  Set-Content -Path $versionFile -Value $newVersion -NoNewline
-                  git config user.name $env:GITHUB_ACTOR
-                  git config user.email $env:GITHUB_EMAIL
-                  git add $versionFile
-                  git commit -m "Bump version to $major.$minor"
-                  git push
-                  echo "VERSION=$major.$minor" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-              } else {
-                  exit 1
-              }
+          $latestTag = git describe --tags --abbrev=0 2>$null
+          if (-not $latestTag -or $latestTag -notmatch '^v(\d+)\.(\d+)$') {
+              $major = 1
+              $minor = 0
           } else {
-              exit 1
+              $major = [int]$matches[1]
+              $minor = [int]$matches[2] + 1
           }
+          $newVersion = "$major.$minor"
+          echo "VERSION=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Restore and Build
         run: |
           nuget restore ${{ env.SOLUTION_FILE_PATH }}
-          msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=x64 ${{ env.SOLUTION_FILE_PATH }}
+          msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=x64 /p:AdditionalOptions="/DVERSION=\"${{ env.VERSION }}\"" ${{ env.SOLUTION_FILE_PATH }}
 
       - name: Download handle64.exe
         shell: pwsh
@@ -71,12 +62,19 @@ jobs:
           mkdir "dist\D2RLauncher" -Force
           Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\D2RLauncher.exe" -Destination "dist\D2RLauncher\" -Force
           Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Destination "dist\D2RLauncher\" -Force
-          $version = "${{ env.VERSION }}"
-          $zipName = "D2RLauncher-$version.zip"
+          $zipName = "D2RLauncher-${{ env.VERSION }}.zip"
           Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
           echo "RELEASE_FILE=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           $absoluteZipPath = Join-Path (Get-Location) $zipName
           echo "ABSOLUTE_RELEASE_FILE=$absoluteZipPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Tag the New Version
+        shell: pwsh
+        run: |
+          git config user.name $env:GITHUB_ACTOR
+          git config user.email "<>"
+          git tag "v${{ env.VERSION }}"
+          git push origin "v${{ env.VERSION }}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
