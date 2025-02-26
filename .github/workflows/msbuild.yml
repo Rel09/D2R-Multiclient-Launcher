@@ -2,7 +2,7 @@ name: MSBuild-D2RLauncher
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
 
 env:
   SOLUTION_FILE_PATH: .
@@ -25,9 +25,10 @@ jobs:
           vs-version: '17.12'
 
       - name: Set Windows SDK Paths
+        shell: pwsh
         run: |
-          echo "LIB=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64" >> $GITHUB_ENV
-          echo "INCLUDE=C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt" >> $GITHUB_ENV
+          echo "LIB=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64" >> $env:GITHUB_ENV
+          echo "INCLUDE=C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt" >> $env:GITHUB_ENV
 
       - name: Retrieve and Increment Version
         shell: pwsh
@@ -41,12 +42,13 @@ jobs:
               $minor = [int]$matches[2] + 1
           }
           $newVersion = "$major.$minor"
-          echo "VERSION=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "VERSION=$newVersion" >> $env:GITHUB_ENV
 
       - name: Restore and Build
+        shell: cmd # Explicitly use cmd for MSBuild compatibility
         run: |
-          nuget restore ${{ env.SOLUTION_FILE_PATH }}
-          msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=x64 /p:AdditionalOptions="/DVERSION=\"${{ env.VERSION }}\"" ${{ env.SOLUTION_FILE_PATH }}
+          nuget restore %SOLUTION_FILE_PATH%
+          msbuild /m /p:Configuration=%BUILD_CONFIGURATION% /p:Platform=x64 /p:AdditionalOptions="/DVERSION=\"%VERSION%\"" %SOLUTION_FILE_PATH%
 
       - name: Download handle64.exe
         shell: pwsh
@@ -64,9 +66,9 @@ jobs:
           Copy-Item -Path "x64\${{ env.BUILD_CONFIGURATION }}\handle64.exe" -Destination "dist\D2RLauncher\" -Force
           $zipName = "D2RLauncher-${{ env.VERSION }}.zip"
           Compress-Archive -Path "dist\D2RLauncher" -DestinationPath $zipName
-          echo "RELEASE_FILE=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "RELEASE_FILE=$zipName" >> $env:GITHUB_ENV
           $absoluteZipPath = Join-Path (Get-Location) $zipName
-          echo "ABSOLUTE_RELEASE_FILE=$absoluteZipPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "ABSOLUTE_RELEASE_FILE=$absoluteZipPath" >> $env:GITHUB_ENV
 
       - name: Tag the New Version
         shell: pwsh
@@ -85,4 +87,3 @@ jobs:
           generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: false
