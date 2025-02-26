@@ -25,7 +25,7 @@ void Main() {
         Init = true;
     }
 
-    static std::string nameVer = std::string(Appname) + " [ v" + std::string(VERSION) + " ]";
+    static std::string nameVer = std::string(Appname) + " [ v" + VERSION + " ]";
     if (ImGui::Begin(nameVer.c_str(), &isRunning, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
 
         // Top bar
