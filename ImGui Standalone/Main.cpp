@@ -5,10 +5,6 @@
 #include "Tools.h"
 #include "Timer.h"
 #include "Registry.h"
-#include "Version.h"
-
-#include <string>
-#include <windows.h>
 
 std::vector<D2RInstanceStruct>      Data = {};
 bool                                isRunning   = true;
@@ -17,15 +13,7 @@ constexpr int                       ProcessPingTimer = 8000;
 constexpr const char                Appname[] = "D2R Multiclient";
 
 void Main() {
-    static TIMESTAMP CheckD2RInstanceTimer = Timer::InitTimer();
-    static bool Init;
-
-    // Spawn in the middle of the screen
-    if (!Init) {
-        SetNextWindowsInTheMiddle(450, 200);
-        Init = true;
-    }
-
+   
     static std::string nameVer = std::string(Appname) + " [ v" + VERSION + " ]";
     if (ImGui::Begin(nameVer.c_str(), &isRunning, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
 
@@ -33,6 +21,7 @@ void Main() {
         MenuRoutine();
 
         // Scan Running (green *) Processes every X seconds
+        static TIMESTAMP CheckD2RInstanceTimer = Timer::InitTimer();
         if (Timer::Sleep(CheckD2RInstanceTimer, ProcessPingTimer)) {
 
             // Check if Process are still running
@@ -55,7 +44,7 @@ void Main() {
         }
 
         // ++++++++++++ Table ++++++++++++
-        const std::vector<std::string> headers = { "#", "Profile Name", "Realm", "Mods" };
+        const std::vector<std::string> headers = { " ", "Profile Name", "Realm", "Mods" };
         ImGui::BeginTable("table1", static_cast<int>(headers.size()), ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg );
 
         // Setup headers and columns
@@ -70,10 +59,17 @@ void Main() {
             ImGui::TableNextRow();
             ImGui::PushID(&i);
 
-            // "*"
+            // >
             ImGui::TableNextColumn();
-            ImColor Temp = i.ProcessID == -1 ? ImColor(255, 0, 0) : ImColor(0, 255, 0);
-            ImGui::TextColored(Temp, "*");
+            const float size = 8.0f;
+            const ImVec2 cellMin = ImGui::GetCursorScreenPos();
+            const ImVec2 center = ImVec2(cellMin.x + (ImGui::GetColumnWidth() * 0.5f), cellMin.y + (ImGui::GetTextLineHeight() * 0.5f));
+            ImVec2 p1 = ImVec2(center.x - size * 0.5f, center.y - size * 0.5f);
+            ImVec2 p2 = ImVec2(center.x - size * 0.5f, center.y + size * 0.5f);
+            ImVec2 p3 = ImVec2(center.x + size * 0.5f, center.y);
+            ImGui::GetWindowDrawList()->AddTriangleFilled(p1, p2, p3, i.ProcessID == -1 ? ImColor(150, 150, 150) : ImColor(0, 255, 0));
+            ImGui::Dummy(ImVec2(0, ImGui::GetTextLineHeight()));
+
 
             // __ Selected Row __
             ImGui::TableNextColumn();
@@ -90,8 +86,66 @@ void Main() {
             ImGui::Text("%s", i.ModList.c_str());
 
             ImGui::PopID();
+
+        
+
         }
         ImGui::EndTable();
     }
     ImGui::End();
+}
+
+
+
+
+
+void HandleKeyPress(const UINT& message, const WPARAM& key) {
+    switch (message) {
+
+        //case WM_KEYDOWN: {
+
+        //    break;
+        //}
+
+        //case WM_SYSKEYDOWN: {
+
+        //    break;
+        //}
+
+        // Key up
+        case WM_KEYUP: {
+
+            switch (key) {
+
+                // INS -> START
+                case VK_INSERT: {
+                    StartSelected();
+                    break;
+                }
+
+                // Del -> STOP
+                case VK_DELETE: {
+                    StopSelected();
+                    break;
+                }
+
+                // Home -> INJECT
+                case VK_HOME: {
+                    InjectSelected();
+                    break;
+                }
+
+                // End - > EJECT
+                case VK_END: {
+                    EjectSelected();
+                    break;
+                }
+
+                default: break;
+            }
+            break;
+        }
+
+        default: break;
+    }
 }

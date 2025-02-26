@@ -106,9 +106,6 @@
     <ClInclude Include="Console.h">
       <Filter>Fichiers sources</Filter>
     </ClInclude>
-    <ClInclude Include="Version.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ImGui Standalone1.rc" />

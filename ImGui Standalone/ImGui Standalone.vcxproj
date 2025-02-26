@@ -186,7 +186,6 @@
     <ClInclude Include="Registry.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Tools.h" />
-    <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ImGui Standalone1.rc" />

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <windows.h>
 
 struct D2RInstanceStruct {
     std::string Name;
@@ -22,3 +23,4 @@ extern bool                             isRunning;
 extern bool                             ShowConsole;
 
 void Main();
+void HandleKeyPress(const UINT& message, const WPARAM& key);

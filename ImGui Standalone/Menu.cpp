@@ -4,7 +4,6 @@
 #include "Main.h"
 #include "Tools.h"
 #include "Registry.h"
-#include "Version.h"
 #include "Injection.h"
 
 #include <Windows.h>
@@ -12,6 +11,75 @@
 #include <chrono>
 
 static bool AddWindows = false;
+
+
+void StartSelected() {
+    for (auto& i : Data) {
+        if (i.isSelected && i.ProcessID == -1) {
+
+            std::string TempStr = i.D2REXEPath + " -username \"" + i.Email + "\" -password \"" + i.Password + "\" -address \"" + i.Realm + ".actual.battle.net\"";
+            if (!i.ModList.empty()) {
+                TempStr += " -mod \"" + i.ModList + "\"";
+            }
+            std::cout << "D2R Launch Command: [ " << TempStr << " ]" << std::endl;
+
+            // Scan all Running executable thats starts with D2R to remove handle
+            RemoveAllHandles();
+
+            // Start the Process
+            i.ProcessID = RunCommand(TempStr);;
+
+            // Inject if a Path is given
+            if (i.ProcessID != 0 && !i.DllPath.empty()) {
+                Sleep(700);
+                InjectDLL(i.ProcessID, i.DllPath);
+            }
+
+        }
+    }
+}
+void StopSelected() {
+    for (auto& i : Data) {
+        if (i.isSelected && i.ProcessID != -1) {
+            auto closeProcessByID = [](DWORD pid) -> bool {
+                HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+                if (hProcess == nullptr) {
+                    std::cerr << "Failed to open process with ID: " << pid << std::endl;
+                    return false;
+                }
+
+                BOOL result = TerminateProcess(hProcess, 0);
+                CloseHandle(hProcess);
+
+                if (result) {
+                    std::cout << "Successfully terminated process with ID: " << pid << std::endl;
+                    return true;
+                }
+                else {
+                    std::cerr << "Failed to terminate process with ID: " << pid << std::endl;
+                    return false;
+                }
+            };
+            closeProcessByID(i.ProcessID);
+            i.ProcessID = -1;
+        }
+    }
+}
+
+void InjectSelected() {
+    for (auto& i : Data) {
+        if (i.isSelected && i.ProcessID != -1) {
+            InjectDLL(i.ProcessID, i.DllPath);
+        }
+    }
+}
+void EjectSelected() {
+    for (auto& i : Data) {
+        if (i.isSelected && i.ProcessID != -1) {
+            EjectDLL(i.ProcessID, i.DllPath);
+        }
+    }
+}
 
 static void DisplayTopBar() {
     if (ImGui::BeginMenuBar()) {
@@ -78,72 +146,11 @@ static void DisplayTopBar() {
                 }
             }
             ImGui::Separator();
-            if (ImGui::MenuItem("Start")) {
-
-                if (Data.size() == 0) {
-                    MessageBoxA(0, "No selection made. Starting is not possible.", "D2RMulti", 0);
-                }
-
-                else {
-                    for (auto& i : Data) {
-                        if (i.isSelected && i.ProcessID == -1) {
-     
-                            std::string TempStr = i.D2REXEPath + " -username \"" + i.Email + "\" -password \"" + i.Password + "\" -address \"" + i.Realm + ".actual.battle.net\"";
-                            if (!i.ModList.empty()) {
-                                TempStr += " -mod \"" + i.ModList + "\"";
-                            }
-                            std::cout << "D2R Launch Command: [ " << TempStr  << " ]" << std::endl;
-
-                            // Scan all Running executable thats starts with D2R to remove handle
-                            RemoveAllHandles();
-
-                            // Start the Process
-                            i.ProcessID = RunCommand(TempStr);;
-
-                            // Inject if a Path is given
-                            if (i.ProcessID != 0 && !i.DllPath.empty()) {
-                                Sleep(700);
-                                InjectDLL(i.ProcessID, i.DllPath);
-                            }
-             
-                        }
-                    }
-                }
-
-               // StartWindows = true;
+            if (ImGui::MenuItem("Start", "Ins")) {
+                StartSelected();           
             }    
-            if (ImGui::MenuItem("Stop")) {
-
-                for (auto& i : Data) {
-
-
-                    if (i.isSelected && i.ProcessID != -1) {
-                        auto closeProcessByID = [](DWORD pid) -> bool {
-                            HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
-                            if (hProcess == nullptr) {
-                                std::cerr << "Failed to open process with ID: " << pid << std::endl;
-                                return false;
-                            }
-
-                            BOOL result = TerminateProcess(hProcess, 0);
-                            CloseHandle(hProcess);
-
-                            if (result) {
-                                std::cout << "Successfully terminated process with ID: " << pid << std::endl;
-                                return true;
-                            }
-                            else {
-                                std::cerr << "Failed to terminate process with ID: " << pid << std::endl;
-                                return false;
-                            }
-                            };
-                        closeProcessByID(i.ProcessID);
-                        i.ProcessID = -1;
-                    }
-
-
-                }
-
+            if (ImGui::MenuItem("Stop", "Del")) {
+                StopSelected();
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Import")) {
@@ -170,23 +177,11 @@ static void DisplayTopBar() {
 
             }
             ImGui::Separator();
-            if (ImGui::MenuItem("Inject Dll")) {
-
-                for (auto& i : Data) {
-                    if (i.isSelected && i.ProcessID != -1) {
-                        InjectDLL(i.ProcessID, i.DllPath);
-                    }
-                }
-
+            if (ImGui::MenuItem("Inject Dll", "Home")) {
+                InjectSelected();
             }          
-            if (ImGui::MenuItem("Eject Dll")) {
-
-                for (auto& i : Data) {
-                    if (i.isSelected && i.ProcessID != -1) {
-                        EjectDLL(i.ProcessID, i.DllPath);
-                    }
-                }
-
+            if (ImGui::MenuItem("Eject Dll", "End")) {
+                EjectSelected();
             }
             ImGui::EndMenu();
         }
@@ -201,6 +196,8 @@ static void DisplayTopBar() {
 
         ImGui::EndMenuBar();
     }
+
+
 }
 
 static void DisplayExternalMenu() {
