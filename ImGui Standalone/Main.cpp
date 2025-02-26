@@ -7,6 +7,7 @@
 #include "Registry.h"
 #include "Version.h"
 
+#include <string>
 #include <windows.h>
 
 std::vector<D2RInstanceStruct>      Data = {};
