@@ -1,6 +1,7 @@
 ## D2R Multiclient Launcher
 
 <p align="center">
+  <img src="https://i.imgur.com/MgqgKNj.png" alt="image">
   <img src="https://i.imgur.com/CZJVZos.gif" alt="image">
 </p>
 
@@ -45,3 +46,9 @@ handle64.exe is in the correct folder.
 
 This tool is provided "as is" without any warranties. Use at your own risk.
 By using third-party tools, you acknowledge that you are doing so at your own risk and in accordance with the EULA.
+
+## Acknowledgements
+
+- Thanks to [Dear ImGui](https://github.com/ocornut/imgui)  
+- Thanks to [ImGui Standalone](https://github.com/adamhlt/ImGui-Standalone)
+
