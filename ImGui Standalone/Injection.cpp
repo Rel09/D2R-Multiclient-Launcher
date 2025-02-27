@@ -9,7 +9,7 @@
 #include <wtsapi32.h>
 #pragma comment(lib, "Wtsapi32.lib")
 
-std::vector<std::string>	RunCommandWithOutput(const std::string& command) {
+std::vector<std::string> RunCommandWithOutput(const std::string& command) {
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
@@ -66,7 +66,7 @@ std::vector<std::string>	RunCommandWithOutput(const std::string& command) {
 	}
 	return outputLines;
 }
-DWORD                       RunCommand(const std::string& command) {
+DWORD RunCommand(const std::string& command) {
 	STARTUPINFOA si = { sizeof(si) };
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(pi));
@@ -84,7 +84,7 @@ DWORD                       RunCommand(const std::string& command) {
 	return pid;
 }
 
-void						EjectDLL(const int& pid, const std::string& path) {
+void EjectDLL(const int& pid, const std::string& path) {
 	std::wstring wpath(path.begin(), path.end());
 	std::wstring dllName = std::filesystem::path(wpath).filename();
 
@@ -128,7 +128,7 @@ void						EjectDLL(const int& pid, const std::string& path) {
 		CloseHandle(hProc);
 	}
 }
-void						InjectDLL(const int& pid, const std::string& path) {
+void InjectDLL(const int& pid, const std::string& path) {
 	if (!std::filesystem::exists(path)) {
 		MessageBoxA(0, "Error: Couldn't find DLL...", "D2RMulti", 0);
 		return;
@@ -168,8 +168,7 @@ void						InjectDLL(const int& pid, const std::string& path) {
 	CloseHandle(hProc);
 	CloseHandle(hThread);
 }
-
-void						RemoveAllHandles() {
+void RemoveAllHandles() {
 	auto fileExists = [](const std::string& path) -> bool {
 		return std::filesystem::exists(path);
 	};

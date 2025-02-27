@@ -10961,13 +10961,16 @@ void ImGui::NavUpdateCreateMoveRequest()
     // FIXME-NAV: Consider enabling those keys even without the master ImGuiConfigFlags_NavEnableKeyboard flag?
     const bool nav_keyboard_active = (io.ConfigFlags & ImGuiConfigFlags_NavEnableKeyboard) != 0;
     float scoring_rect_offset_y = 0.0f;
-    if (window && g.NavMoveDir == ImGuiDir_None && nav_keyboard_active)
-        scoring_rect_offset_y = NavUpdatePageUpPageDown();
-    if (scoring_rect_offset_y != 0.0f)
-    {
-        g.NavScoringNoClipRect = window->InnerRect;
-        g.NavScoringNoClipRect.TranslateY(scoring_rect_offset_y);
-    }
+
+    // had to disable this, otherwise i couldnt use Home/End shortcut on the table...
+
+    //if (window && g.NavMoveDir == ImGuiDir_None && nav_keyboard_active)
+    //    scoring_rect_offset_y = NavUpdatePageUpPageDown();
+    //if (scoring_rect_offset_y != 0.0f)
+    //{
+    //    g.NavScoringNoClipRect = window->InnerRect;
+    //    g.NavScoringNoClipRect.TranslateY(scoring_rect_offset_y);
+    //}
 
     // [DEBUG] Always send a request
 #if IMGUI_DEBUG_NAV_SCORING

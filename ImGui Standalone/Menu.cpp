@@ -12,7 +12,6 @@
 
 static bool AddWindows = false;
 
-
 void StartSelected() {
     for (auto& i : Data) {
         if (i.isSelected && i.ProcessID == -1) {
@@ -65,7 +64,6 @@ void StopSelected() {
         }
     }
 }
-
 void InjectSelected() {
     for (auto& i : Data) {
         if (i.isSelected && i.ProcessID != -1) {
@@ -199,7 +197,6 @@ static void DisplayTopBar() {
 
 
 }
-
 static void DisplayExternalMenu() {
     auto InputTextWithResize = [](const char* label, std::string& buffer, size_t maxSize, ImGuiInputTextFlags flags = 0) {
         char tempBuffer[MAX_PATH + 1] = { 0 };

@@ -13,7 +13,6 @@ constexpr int                       ProcessPingTimer = 8000;
 constexpr const char                Appname[] = "D2R Multiclient";
 
 void Main() {
-   
     static std::string nameVer = std::string(Appname) + " [ v" + VERSION + " ]";
     if (ImGui::Begin(nameVer.c_str(), &isRunning, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
 
@@ -45,7 +44,7 @@ void Main() {
 
         // ++++++++++++ Table ++++++++++++
         const std::vector<std::string> headers = { " ", "Profile Name", "Realm", "Mods" };
-        ImGui::BeginTable("table1", static_cast<int>(headers.size()), ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg );
+        ImGui::BeginTable("table1", static_cast<int>(headers.size()), ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg);
 
         // Setup headers and columns
         ImGui::TableSetupColumn(headers[0].c_str(), ImGuiTableColumnFlags_WidthFixed, 10.0f);
@@ -86,8 +85,6 @@ void Main() {
             ImGui::Text("%s", i.ModList.c_str());
 
             ImGui::PopID();
-
-        
 
         }
         ImGui::EndTable();

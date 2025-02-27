@@ -4,7 +4,7 @@
 #include <fstream>
 #include <filesystem>
 
-bool		IsRunningAsAdmin() {
+bool IsRunningAsAdmin() {
 	BOOL isAdmin = FALSE;
 	HANDLE token = NULL;
 	if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
@@ -24,7 +24,7 @@ std::string	GetExeDirectory() {
 	return exePath.parent_path().string() + '\\';
 }
 
-void		SetNextWindowsInTheMiddle(const int WinSizeX, const int WinSizeY) {
+void SetNextWindowsInTheMiddle(const int WinSizeX, const int WinSizeY) {
 	ImVec2 windowSize(static_cast<float>(WinSizeX), static_cast<float>(WinSizeY));
 	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
