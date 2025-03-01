@@ -43,38 +43,39 @@ ID3D11RenderTargetView*             UI::pMainRenderTargetView = nullptr;
 HMODULE                             UI::hCurrentModule = nullptr;
 
 int WINAPI                          wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd) {
-    
-    // Takes the profile name as argument, Uninject & Reinject
+    GetSettings->LoadConfig();
+
     int argc;
     LPWSTR* argvW = CommandLineToArgvW(lpCmdLine, &argc);
     if (argvW) {
-        if (argc > 0) {  
-            int len = WideCharToMultiByte(CP_ACP, 0, argvW[0], -1, NULL, 0, NULL, NULL);
-            if (len <= 0) {
-                LocalFree(argvW);
-                return -1;
+        std::vector<std::string> ArgsV;
+        for (int i = 0; i < argc; ++i) {
+            int len = WideCharToMultiByte(CP_ACP, 0, argvW[i], -1, NULL, 0, NULL, NULL);
+            if (len > 0) {
+                std::vector<char> buffer(len);
+                WideCharToMultiByte(CP_ACP, 0, argvW[i], -1, buffer.data(), len, NULL, NULL);
+                ArgsV.push_back(std::string(buffer.data()));
             }
-            char* arg = new char[len];
-            WideCharToMultiByte(CP_ACP, 0, argvW[0], -1, arg, len, NULL, NULL);
-            std::string Arg = arg;
-            delete[] arg;
+        }
+
+        LocalFree(argvW);
+
+        if (ArgsV.size() > 0) {
+            std::string processName = ArgsV[0];
             for (const auto& i : Data) {
-                if (i.Name == Arg) {
+                if (i.Name == processName) {
                     int id = FindProcessIdByWindowTitle(i.Name);
                     if (id != 0) {
-                        GetSettings->LoadConfig();
                         EjectDLL(id, i.DllPath);
-                        SetWindowTitle(id, i.Name);
+                        Sleep(1000);
                         InjectDLL(id, i.DllPath);
-                        LocalFree(argvW);
                         return 0;
                     }
                 }
             }
-            LocalFree(argvW);
         }
-    }
 
+    }
   
     // -- GUI
     if (IsProcessRunning()) {
@@ -87,7 +88,6 @@ int WINAPI                          wWinMain(_In_ HINSTANCE hInstance, _In_opt_ 
         return -1;
     }
 
-    GetSettings->LoadConfig();
     UI::Render();
     return 0;
 }
