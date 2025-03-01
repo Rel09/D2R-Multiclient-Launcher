@@ -14,7 +14,7 @@ constexpr const char                Appname[] = "D2R Multiclient";
 
 void Main() {
     static std::string nameVer = std::string(Appname) + " [ v" + VERSION + " ]";
-    if (ImGui::Begin(nameVer.c_str(), &isRunning, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
+    if (ImGui::Begin(nameVer.c_str(), &isRunning, ImGuiWindowFlags_MenuBar)) {
 
         // Top bar
         MenuRoutine();
@@ -88,13 +88,9 @@ void Main() {
 
         }
         ImGui::EndTable();
+        ImGui::End();
     }
-    ImGui::End();
 }
-
-
-
-
 
 void HandleKeyPress(const UINT& message, const WPARAM& key) {
     switch (message) {

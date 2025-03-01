@@ -9,6 +9,13 @@
 #include <wtsapi32.h>
 #pragma comment(lib, "Wtsapi32.lib")
 
+struct WindowTitleData {
+	DWORD pid;
+	std::wstring wNewTitle;
+	bool foundWindow;
+};
+
+
 std::vector<std::string> RunCommandWithOutput(const std::string& command) {
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -66,67 +73,115 @@ std::vector<std::string> RunCommandWithOutput(const std::string& command) {
 	}
 	return outputLines;
 }
+
 DWORD RunCommand(const std::string& command) {
 	STARTUPINFOA si = { sizeof(si) };
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(pi));
 
-	if (!CreateProcessA(NULL, const_cast<char*>(command.c_str()), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-		MessageBoxA(0, "Error: CreateProcess failed ...", "D2RMulti", 0);
+	DWORD creationFlags = CREATE_BREAKAWAY_FROM_JOB | CREATE_NO_WINDOW;
+
+	if (!CreateProcessA(NULL, const_cast<char*>(command.c_str()), NULL, NULL, FALSE, creationFlags, NULL, NULL, &si, &pi)) {
+		MessageBoxA(0, "Error: CreateProcess failed ...", "D2RMulti", MB_ICONERROR | MB_OK);
 		return 0;
 	}
 
-
-	WaitForInputIdle(pi.hProcess, INFINITE);
 	DWORD pid = pi.dwProcessId;
+
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 	return pid;
 }
 
-void EjectDLL(const int& pid, const std::string& path) {
-	std::wstring wpath(path.begin(), path.end());
-	std::wstring dllName = std::filesystem::path(wpath).filename();
+void EjectDLL(int pid, const std::string& dllName) {
+	std::wstring wpath(dllName.begin(), dllName.end());
+	std::wstring wideDllName = std::filesystem::path(wpath).filename();
+
+	HMODULE hKernel32 = GetModuleHandle(L"kernel32.dll");
+	if (!hKernel32) {
+		MessageBoxA(NULL, "Failed to get handle to kernel32.dll", "Error", MB_ICONERROR | MB_OK);
+		return;
+	}
+
+	HANDLE hProc = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION, FALSE, pid);
+	if (!hProc) {
+		MessageBoxA(NULL, "Failed to open process", "Error", MB_ICONERROR | MB_OK);
+		return;
+	}
+
+	LPTHREAD_START_ROUTINE lpFreeLibrary = (LPTHREAD_START_ROUTINE)GetProcAddress(hKernel32, "FreeLibrary");
+	if (!lpFreeLibrary) {
+		MessageBoxA(NULL, "Failed to get FreeLibrary address", "Error", MB_ICONERROR | MB_OK);
+		CloseHandle(hProc);
+		return;
+	}
 
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
-	if (hSnapshot == INVALID_HANDLE_VALUE) return;
+	if (hSnapshot == INVALID_HANDLE_VALUE) {
+		MessageBoxA(NULL, "Failed to create tool help snapshot", "Error", MB_ICONERROR | MB_OK);
+		CloseHandle(hProc);
+		return;
+	}
 
-	MODULEENTRY32 ModuleEntry32 = { 0 };
-	ModuleEntry32.dwSize = sizeof(MODULEENTRY32);
-	HMODULE targetModule = NULL;
-
-	if (Module32First(hSnapshot, &ModuleEntry32)) {
+	MODULEENTRY32 me32 = { sizeof(MODULEENTRY32) };
+	LPVOID moduleBaseAddr = nullptr;
+	bool found = false;
+	if (Module32First(hSnapshot, &me32)) {
 		do {
-			if (_wcsicmp(ModuleEntry32.szModule, dllName.c_str()) == 0) {
-				targetModule = ModuleEntry32.hModule;
+			if (_wcsicmp(me32.szModule, wideDllName.c_str()) == 0) {
+				moduleBaseAddr = me32.modBaseAddr;
+				found = true;
 				break;
 			}
-		} while (Module32Next(hSnapshot, &ModuleEntry32));
+		} while (Module32Next(hSnapshot, &me32));
 	}
 	CloseHandle(hSnapshot);
 
-	if (targetModule) {
-		HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-		if (!hProc) return;
+	if (!found) {
+		//MessageBoxA(NULL, "DLL not found in process", "Error", MB_ICONERROR | MB_OK);
+		CloseHandle(hProc);
+		return;
+	}
 
-		HMODULE hKernel32 = GetModuleHandleA("kernel32.dll");
-		LPVOID lpStartAddress = GetProcAddress(hKernel32, "FreeLibrary");
-		if (!lpStartAddress) {
+	int attempt = 1;
+	while (found) {
+		HANDLE hThread = CreateRemoteThread(hProc, NULL, 0, lpFreeLibrary, moduleBaseAddr, 0, NULL);
+		if (!hThread) {
+			MessageBoxA(NULL, "Failed to create remote thread", "Error", MB_ICONERROR | MB_OK);
 			CloseHandle(hProc);
 			return;
 		}
 
-		HANDLE hThread = CreateRemoteThread(hProc, NULL, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(lpStartAddress), targetModule, 0, NULL);
-		if (hThread) {
-			WaitForSingleObject(hThread, INFINITE);
-			CloseHandle(hThread);
+		WaitForSingleObject(hThread, INFINITE);
+		DWORD exitCode;
+		GetExitCodeThread(hThread, &exitCode);
+		CloseHandle(hThread);
+		hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
+		if (hSnapshot == INVALID_HANDLE_VALUE) {
+			std::wcout << L"[+] Failed to recheck module snapshot." << std::endl;
+			break;
+		}
+
+		found = false;
+		if (Module32First(hSnapshot, &me32)) {
+			do {
+				if (_wcsicmp(me32.szModule, wideDllName.c_str()) == 0) {
+					found = true;
+					break;
+				}
+			} while (Module32Next(hSnapshot, &me32));
+		}
+		CloseHandle(hSnapshot);
+
+		if (found) {
+			std::wcout << L"[+] DLL still loaded, retrying..." << std::endl;
 		}
 		else {
-			DWORD error = GetLastError();
-			std::cerr << "CreateRemoteThread failed with error: " << error << std::endl;
+			std::wcout << L"[+] DLL ejected successfully after " << attempt << L" attempts." << std::endl;
 		}
-		CloseHandle(hProc);
+		attempt++;
 	}
+	CloseHandle(hProc);
 }
 void InjectDLL(const int& pid, const std::string& path) {
 	if (!std::filesystem::exists(path)) {
@@ -134,40 +189,76 @@ void InjectDLL(const int& pid, const std::string& path) {
 		return;
 	}
 
-	std::wstring wpath = std::wstring(path.begin(), path.end());
+	std::wstring wpath(path.begin(), path.end());
 	long dll_size = static_cast<long>((wpath.length() + 1) * sizeof(wchar_t));
+
+	std::cout << "[+] Opening process " << pid << " for injection..." << std::endl;
 	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 	if (hProc == NULL) {
+		DWORD error = GetLastError();
+		std::cout << "[!] OpenProcess failed with error: " << error << std::endl;
 		MessageBoxA(0, "Error: Failed to open target process...", "D2RMulti", 0);
 		return;
 	}
 
+	std::cout << "[+] Allocating memory in process..." << std::endl;
 	LPVOID lpAlloc = VirtualAllocEx(hProc, NULL, dll_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	if (lpAlloc == NULL) {
+		DWORD error = GetLastError();
+		std::cout << "[!] VirtualAllocEx failed with error: " << error << std::endl;
 		MessageBoxA(0, "Error: VirtualAllocEx failed...", "D2RMulti", 0);
 		CloseHandle(hProc);
 		return;
 	}
 
-	if (WriteProcessMemory(hProc, lpAlloc, wpath.c_str(), dll_size, 0) == 0) {
+	std::cout << "[+] Writing DLL path to process memory..." << std::endl;
+	if (WriteProcessMemory(hProc, lpAlloc, wpath.c_str(), dll_size, NULL) == 0) {
+		DWORD error = GetLastError();
+		std::cout << "[!] WriteProcessMemory failed with error: " << error << std::endl;
 		MessageBoxA(0, "Error: WriteProcessMemory failed...", "D2RMulti", 0);
 		CloseHandle(hProc);
 		return;
 	}
 
+	std::cout << "[+] Loading kernel32.dll..." << std::endl;
 	HMODULE hKernel32 = LoadLibraryA("kernel32");
+	if (!hKernel32) {
+		DWORD error = GetLastError();
+		std::cout << "[!] LoadLibraryA failed with error: " << error << std::endl;
+		MessageBoxA(0, "Error: Failed to load kernel32.dll...", "D2RMulti", 0);
+		CloseHandle(hProc);
+		return;
+	}
+
 	LPVOID lpStartAddress = GetProcAddress(hKernel32, "LoadLibraryW");
+	if (!lpStartAddress) {
+		DWORD error = GetLastError();
+		std::cout << "[!] GetProcAddress failed with error: " << error << std::endl;
+		MessageBoxA(0, "Error: Failed to get LoadLibraryW address...", "D2RMulti", 0);
+		CloseHandle(hProc);
+		return;
+	}
+
+	std::cout << "[+] Creating remote thread to load DLL..." << std::endl;
 	HANDLE hThread = CreateRemoteThread(hProc, NULL, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(lpStartAddress), lpAlloc, 0, NULL);
 	if (hThread == NULL) {
+		DWORD error = GetLastError();
+		std::cout << "[!] CreateRemoteThread failed with error: " << error << std::endl;
 		MessageBoxA(0, "Error: CreateRemoteThread failed...", "D2RMulti", 0);
 		CloseHandle(hProc);
 		return;
 	}
+
 	WaitForSingleObject(hThread, INFINITE);
+	DWORD exitCode;
+	GetExitCodeThread(hThread, &exitCode);
+	std::cout << "[+] Remote thread completed with exit code: " << exitCode << std::endl;
 
 	CloseHandle(hProc);
 	CloseHandle(hThread);
+	std::wcout << L"[+] DLL injected successfully: " << wpath << std::endl;
 }
+
 void RemoveAllHandles() {
 	auto fileExists = [](const std::string& path) -> bool {
 		return std::filesystem::exists(path);
@@ -211,4 +302,117 @@ void RemoveAllHandles() {
 			handle_id_populated = "";	// im paranoid
 		}
 	}
+}
+bool WaitForProcessReady(DWORD pid, DWORD timeoutMs) {
+	DWORD startTime = GetTickCount();
+	HANDLE hSnapshot;
+	bool ready = false;
+
+	std::cout << "[+] Waiting for process " << pid << " to be ready..." << std::endl;
+
+	while (GetTickCount() - startTime < timeoutMs) {
+		hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
+		if (hSnapshot == INVALID_HANDLE_VALUE) {
+			DWORD error = GetLastError();
+			std::cout << "[!] Snapshot failed with error: " << error << std::endl;
+			Sleep(100);
+			continue;
+		}
+
+		MODULEENTRY32 me32 = { sizeof(MODULEENTRY32) };
+		if (Module32First(hSnapshot, &me32)) {
+			std::wcout << L"[+] Main module loaded: " << me32.szModule << std::endl;
+			ready = true;
+		}
+		CloseHandle(hSnapshot);
+
+		if (ready) {
+			break;
+		}
+		Sleep(100);
+	}
+
+	HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+	if (hProc) {
+		DWORD exitCode;
+		if (GetExitCodeProcess(hProc, &exitCode)) {
+			if (exitCode == STILL_ACTIVE) {
+				std::cout << "[+] Process " << pid << " is still active." << std::endl;
+			}
+			else {
+				std::cout << "[!] Process " << pid << " terminated with code: " << exitCode << std::endl;
+				ready = false;
+			}
+		}
+		else {
+			std::cout << "[!] GetExitCodeProcess failed: " << GetLastError() << std::endl;
+			ready = false;
+		}
+		CloseHandle(hProc);
+	}
+	else {
+		std::cout << "[!] OpenProcess failed: " << GetLastError() << std::endl;
+		ready = false;
+	}
+
+	std::cout << "[+] WaitForProcessReady result: " << (ready ? "Ready" : "Not Ready") << std::endl;
+	return ready;
+}
+
+bool SetWindowTitle(DWORD pid, const std::string& newTitle) {
+	WindowTitleData data;
+	data.pid = pid;
+	data.wNewTitle = std::wstring(newTitle.begin(), newTitle.end());
+	data.foundWindow = false;
+
+	WNDENUMPROC enumProc = [](HWND hwnd, LPARAM lParam) -> BOOL {
+		WindowTitleData* dataPtr = reinterpret_cast<WindowTitleData*>(lParam);
+		DWORD windowPid;
+		GetWindowThreadProcessId(hwnd, &windowPid);
+
+		if (windowPid == dataPtr->pid && IsWindowVisible(hwnd)) {
+			SendMessageW(hwnd, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(dataPtr->wNewTitle.c_str()));
+			dataPtr->foundWindow = true;
+			return FALSE;
+		}
+		return TRUE;
+	};
+	for (int i = 0; i < 10 && !data.foundWindow; ++i) {
+		EnumWindows(enumProc, reinterpret_cast<LPARAM>(&data));
+		if (!data.foundWindow) {
+			Sleep(200);
+		}
+	}
+	return data.foundWindow;
+}
+
+
+
+DWORD FindProcessIdByWindowTitle(const std::string& titleToFind) {
+	struct WindowProcessData {
+		std::wstring wTargetTitle;
+		DWORD pid = 0;
+		bool found = false;
+	};
+
+	WindowProcessData data;
+	data.wTargetTitle = std::wstring(titleToFind.begin(), titleToFind.end());
+
+	WNDENUMPROC enumProc = [](HWND hwnd, LPARAM lParam) -> BOOL {
+		WindowProcessData* dataPtr = reinterpret_cast<WindowProcessData*>(lParam);
+
+		wchar_t windowTitle[256];
+		GetWindowTextW(hwnd, windowTitle, sizeof(windowTitle) / sizeof(wchar_t));
+
+		if (IsWindowVisible(hwnd) && wcscmp(windowTitle, dataPtr->wTargetTitle.c_str()) == 0) {
+			GetWindowThreadProcessId(hwnd, &dataPtr->pid);
+			dataPtr->found = true;
+			return FALSE;
+		}
+		return TRUE;
+	};
+
+	EnumWindows(enumProc, reinterpret_cast<LPARAM>(&data));
+
+	return data.found ? data.pid : 0;
 }

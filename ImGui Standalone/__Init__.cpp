@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <tchar.h>
 #include "d3d11.h"
+#include "Injection.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
@@ -43,11 +44,50 @@ HMODULE                             UI::hCurrentModule = nullptr;
 
 int WINAPI                          wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd) {
     
+    // Takes the profile name as argument, Uninject & Reinject
+    int argc;
+    LPWSTR* argvW = CommandLineToArgvW(lpCmdLine, &argc);
+    if (argvW) {
+        if (argc > 0) {
+            GetSettings->LoadConfig();
+            int len = WideCharToMultiByte(CP_ACP, 0, argvW[0], -1, NULL, 0, NULL, NULL);
+            if (len <= 0) {
+                LocalFree(argvW);
+                return -1;
+            }
+            char* arg = new char[len];
+            WideCharToMultiByte(CP_ACP, 0, argvW[0], -1, arg, len, NULL, NULL);
+            std::string Arg = arg;
+            delete[] arg;
+            for (const auto& i : Data) {
+                if (i.Name == Arg) {
+                    int id = FindProcessIdByWindowTitle(i.Name);
+                    if (id != 0) {
+                        EjectDLL(id, i.DllPath);
+                        SetWindowTitle(id, i.Name);
+                        InjectDLL(id, i.DllPath);
+                        LocalFree(argvW);
+                        return 0;
+                    }
+                }
+            }
+            LocalFree(argvW);
+        }
+    }
+
+  
+    // -- GUI
+    if (IsProcessRunning()) {
+        MessageBoxA(0, "The process is already running.", "D2RMulti", MB_OK | MB_ICONEXCLAMATION);
+        return -1;
+    }
+
     if (!IsRunningAsAdmin()) {
         MessageBoxA(0, "Administrator privileges are required to run this process.", "D2RMulti", MB_OK | MB_ICONEXCLAMATION);
         return -1;
     }
 
+    GetSettings->LoadConfig();
     UI::Render();
     return 0;
 }
@@ -229,7 +269,7 @@ void                                UI::Render() {
     const ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     static bool Init;
 
-    GetSettings->LoadConfig();
+    
     if (ShowConsole) { SpawnConsole_(); }
     while (isRunning) {
         MSG msg;
@@ -258,6 +298,8 @@ void                                UI::Render() {
             SetNextWindowsInTheMiddle(450, 200);
             Init = true;
         }
+
+
         Main();
 
         ImGui::EndFrame();
@@ -287,8 +329,4 @@ void                                UI::Render() {
     CleanupDeviceD3D();
     ::DestroyWindow(hwnd);
     ::UnregisterClass(wc.lpszClassName, wc.hInstance);
-
-    #ifdef _WINDLL
-    CreateThread(nullptr, NULL, (LPTHREAD_START_ROUTINE)FreeLibrary, hCurrentModule, NULL, nullptr);
-    #endif
 }

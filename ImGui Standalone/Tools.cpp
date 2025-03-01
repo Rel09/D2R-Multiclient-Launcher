@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <fstream>
+#include <tlhelp32.h>
 #include <filesystem>
 
 bool IsRunningAsAdmin() {
@@ -44,4 +45,36 @@ std::vector<std::string> ReadFile(const std::string& filename) {
 	}
 
 	return lines;
+}
+
+bool IsProcessRunning() {
+    wchar_t exeName[MAX_PATH];
+    if (!GetModuleFileNameW(NULL, exeName, MAX_PATH)) {
+        return false;
+    }
+
+    wchar_t* exeBaseName = wcsrchr(exeName, L'\\');
+    exeBaseName = exeBaseName ? exeBaseName + 1 : exeName;
+
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+
+    PROCESSENTRY32W pe;
+    pe.dwSize = sizeof(PROCESSENTRY32W);
+
+    int instanceCount = 0;
+    if (Process32FirstW(hSnapshot, &pe)) {
+        do {
+            if (wcscmp(pe.szExeFile, exeBaseName) == 0 && pe.th32ProcessID != GetCurrentProcessId()) {
+                if (++instanceCount > 0) {
+                    CloseHandle(hSnapshot);
+                    return true;
+                }
+            }
+        } while (Process32NextW(hSnapshot, &pe));
+    }
+    CloseHandle(hSnapshot);
+    return false;
 }

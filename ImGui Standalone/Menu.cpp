@@ -26,12 +26,14 @@ void StartSelected() {
             RemoveAllHandles();
 
             // Start the Process
-            i.ProcessID = RunCommand(TempStr);;
+            i.ProcessID = RunCommand(TempStr);
+
+            // Set Window title
+            SetWindowTitle(i.ProcessID, i.Name);
 
             // Inject if a Path is given
-            if (i.ProcessID != 0 && !i.DllPath.empty()) {
-                Sleep(700);
-                InjectDLL(i.ProcessID, i.DllPath);
+            if (i.ProcessID != 0 && !i.DllPath.empty()) {   
+                InjectDLL(i.ProcessID, i.DllPath);          
             }
 
         }
