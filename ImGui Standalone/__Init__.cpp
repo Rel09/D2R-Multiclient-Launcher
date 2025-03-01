@@ -48,8 +48,7 @@ int WINAPI                          wWinMain(_In_ HINSTANCE hInstance, _In_opt_ 
     int argc;
     LPWSTR* argvW = CommandLineToArgvW(lpCmdLine, &argc);
     if (argvW) {
-        if (argc > 0) {
-            GetSettings->LoadConfig();
+        if (argc > 0) {  
             int len = WideCharToMultiByte(CP_ACP, 0, argvW[0], -1, NULL, 0, NULL, NULL);
             if (len <= 0) {
                 LocalFree(argvW);
@@ -63,6 +62,7 @@ int WINAPI                          wWinMain(_In_ HINSTANCE hInstance, _In_opt_ 
                 if (i.Name == Arg) {
                     int id = FindProcessIdByWindowTitle(i.Name);
                     if (id != 0) {
+                        GetSettings->LoadConfig();
                         EjectDLL(id, i.DllPath);
                         SetWindowTitle(id, i.Name);
                         InjectDLL(id, i.DllPath);
